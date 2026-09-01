@@ -13,21 +13,36 @@ interface SendEmailInput {
 }
 
 /**
- * Send a transactional email.
+ * Send a transactional email. Best-effort: never throws.
  *
- * With no RESEND_API_KEY configured this logs the message (including any link in
- * the text body) to the server console instead of sending, so flows that depend
- * on email still work end to end in local development.
+ * - No RESEND_API_KEY  → the message (link included) is logged to the server
+ *   console, so email-dependent flows still work in local development.
+ * - Send fails (e.g. Resend's shared sender rejecting a non-owner recipient
+ *   before a domain is verified) → logged and reported via the return value.
+ *
+ * Callers such as sign-up must not fail just because the email didn't go out —
+ * the user can request a fresh link later.
  */
-export async function sendEmail({ to, subject, html, text }: SendEmailInput): Promise<void> {
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  text,
+}: SendEmailInput): Promise<{ ok: boolean }> {
   if (!resend) {
     logger.warn({ to, subject, text }, "email not sent (RESEND_API_KEY unset) — logged instead");
-    return;
+    return { ok: false };
   }
 
-  const { error } = await resend.emails.send({ from: env.EMAIL_FROM, to, subject, html, text });
-  if (error) {
-    logger.error({ err: error, to, subject }, "failed to send email");
-    throw new Error(`Email send failed: ${error.message}`);
+  try {
+    const { error } = await resend.emails.send({ from: env.EMAIL_FROM, to, subject, html, text });
+    if (error) {
+      logger.error({ err: error, to, subject }, "email send rejected by provider");
+      return { ok: false };
+    }
+    return { ok: true };
+  } catch (error) {
+    logger.error({ err: error, to, subject }, "email send threw");
+    return { ok: false };
   }
 }

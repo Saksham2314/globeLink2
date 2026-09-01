@@ -1,0 +1,33 @@
+// GlobeLink — Prisma schema
+// Phase 0: the minimum needed to prove the migration + client pipeline.
+// Phase 1 (auth) extends `User` with `emailVerified` and adds the Auth.js
+// adapter tables (`Account`, `Session`, `VerificationToken`).
+// Later phases add Journey, Itinerary, Conversation, AgentSession, etc.
+// per docs/ARCHITECTURE.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// An account holder. A single user can publish journeys, save journeys,
+/// message other users, plan itineraries and use the AI assistant — there
+/// are no mutually exclusive roles.
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  /// Public URL-safe identifier, e.g. globelink.app/profile/anaya
+  handle    String?  @unique
+  image     String?
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}

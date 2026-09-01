@@ -26,6 +26,10 @@
   --color-accent-contrast: var(--gl-accent-contrast);
   --color-accent-soft: var(--gl-accent-soft);
 
+  --color-danger: var(--gl-danger);
+  --color-danger-soft: var(--gl-danger-soft);
+  --color-success: var(--gl-success);
+
   --radius-sm: var(--gl-radius-sm);
   --radius-md: var(--gl-radius-md);
   --radius-lg: var(--gl-radius-lg);

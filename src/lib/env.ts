@@ -26,6 +26,26 @@ export const env = createEnv({
     LOG_LEVEL: z
       .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
       .default("info"),
+
+    // ---- Auth.js -----------------------------------------------------------
+    /** Secret used to sign session JWTs and CSRF tokens. Generate with
+     *  `openssl rand -base64 32` (or `npx auth secret`). Auth.js also reads this
+     *  variable name directly. */
+    AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required"),
+
+    /** Google OAuth credentials. Optional: the Google sign-in provider is only
+     *  registered when both are present. Auth.js reads these names directly. */
+    AUTH_GOOGLE_ID: z.string().optional(),
+    AUTH_GOOGLE_SECRET: z.string().optional(),
+
+    // ---- Email (Resend) -------------------------------------------------
+    /** Optional: when absent, verification emails are logged to the server
+     *  console instead of being sent, so the flow still works locally. */
+    RESEND_API_KEY: z.string().optional(),
+    /** From-address for transactional email. Resend's shared sender works for
+     *  testing but only delivers to your own Resend account address until a
+     *  custom domain is verified. */
+    EMAIL_FROM: z.string().default("GlobeLink <onboarding@resend.dev>"),
   },
 
   /**
@@ -44,6 +64,11 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     DIRECT_URL: process.env.DIRECT_URL,
     LOG_LEVEL: process.env.LOG_LEVEL,
+    AUTH_SECRET: process.env.AUTH_SECRET,
+    AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
+    AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    EMAIL_FROM: process.env.EMAIL_FROM,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
 
@@ -53,3 +78,10 @@ export const env = createEnv({
   /** Allow `SKIP_ENV_VALIDATION=1` for Docker builds / linting / CI type checks. */
   skipValidation: Boolean(process.env.SKIP_ENV_VALIDATION),
 });
+
+/** Whether Google OAuth is configured. Used to conditionally register the
+ *  provider and to show/hide the "Continue with Google" button. */
+export const isGoogleAuthEnabled = Boolean(env.AUTH_GOOGLE_ID && env.AUTH_GOOGLE_SECRET);
+
+/** Whether real transactional email is configured. */
+export const isEmailEnabled = Boolean(env.RESEND_API_KEY);

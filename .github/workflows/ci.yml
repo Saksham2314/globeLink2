@@ -22,6 +22,8 @@ jobs:
       DATABASE_URL: "postgresql://user:password@localhost:5432/globelink?schema=public"
       DIRECT_URL: "postgresql://user:password@localhost:5432/globelink?schema=public"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      AUTH_SECRET: "ci-placeholder-secret-not-used-for-anything-real"
+      AUTH_TRUST_HOST: "true"
 
     steps:
       - uses: actions/checkout@v4

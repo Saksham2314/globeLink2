@@ -3,6 +3,12 @@ import { SiteHeader } from "@/components/globe/site-header";
 import { Reveal, RevealGroup, RevealItem } from "@/components/motion/reveal";
 import { Container } from "@/components/ui/container";
 
+const LANDING_NAV = [
+  { label: "How it works", href: "#how-it-works" },
+  { label: "Journeys", href: "#featured" },
+  { label: "The assistant", href: "#assistant" },
+];
+
 const STEPS = [
   {
     n: "01",
@@ -30,7 +36,7 @@ const DESTINATIONS = [
 export default function HomePage() {
   return (
     <>
-      <SiteHeader />
+      <SiteHeader nav={LANDING_NAV} />
 
       <main>
         {/* ---------------------------------------------------------------- Hero */}

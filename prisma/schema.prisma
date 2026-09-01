@@ -1,7 +1,6 @@
 // GlobeLink — Prisma schema
-// Phase 0: the minimum needed to prove the migration + client pipeline.
-// Phase 1 (auth) extends `User` with `emailVerified` and adds the Auth.js
-// adapter tables (`Account`, `Session`, `VerificationToken`).
+// Phase 1 (auth & profiles): User is extended with password + verification,
+// the Auth.js adapter models are added, and TravelPreference lands.
 // Later phases add Journey, Itinerary, Conversation, AgentSession, etc.
 // per docs/ARCHITECTURE.md.
 
@@ -19,15 +18,96 @@ datasource db {
 /// message other users, plan itineraries and use the AI assistant — there
 /// are no mutually exclusive roles.
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
+  id            String    @id @default(cuid())
+  email         String    @unique
+  /// Null until the user confirms their email via the verification link.
+  emailVerified DateTime?
+  /// bcrypt hash. Null for accounts created purely via an OAuth provider.
+  passwordHash  String?
+  name          String?
   /// Public URL-safe identifier, e.g. globelink.app/profile/anaya
-  handle    String?  @unique
-  image     String?
-  bio       String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  handle        String?   @unique
+  image         String?
+  bio           String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  preferences TravelPreference?
 
   @@map("users")
+}
+
+/// Travel preferences, split out so the future AI `getUserPreferences` tool has
+/// a small, stable surface and this can grow without touching User.
+/// `pace`/`budgetTier` hold a fixed vocabulary enforced by Zod at the boundary
+/// (see src/modules/users/user.schema.ts); kept as text for now so the first
+/// auth migration stays focused — they can become Postgres enums later.
+model TravelPreference {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  styles     String[] @default([])
+  pace       String?
+  budgetTier String?
+  interests  String[] @default([])
+  homeRegion String?
+  dietary    String[] @default([])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("travel_preferences")
+}
+
+// ---------------------------------------------------------------------------
+// Auth.js (@auth/prisma-adapter) models.
+// Field names are dictated by the adapter contract — do not rename.
+// `Session` stays effectively unused while the JWT session strategy is in
+// effect (Credentials sign-in is incompatible with database sessions), but
+// the model must exist for the adapter.
+// ---------------------------------------------------------------------------
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+/// Single-use tokens. Auth.js uses this for its own email/OAuth flows; the
+/// custom "verify your email after sign-up" flow reuses it too, with
+/// `identifier` = the user's email.
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }

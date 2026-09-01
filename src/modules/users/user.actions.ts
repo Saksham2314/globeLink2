@@ -1,0 +1,81 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+
+import { auth } from "@/lib/auth";
+import { requireSession } from "@/lib/authz";
+import { isAppError } from "@/lib/errors";
+import { firstErrors, type FormState } from "@/lib/forms";
+import { logger } from "@/lib/logger";
+
+import { updatePreferencesSchema, updateProfileSchema } from "./user.schema";
+import { updatePreferences, updateProfile } from "./user.service";
+
+export async function updateProfileAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const session = await auth();
+
+  let userId: string;
+  try {
+    userId = requireSession(session).user.id;
+  } catch {
+    return { error: "Your session expired. Please sign in again." };
+  }
+
+  const parsed = updateProfileSchema.safeParse({
+    name: formData.get("name"),
+    handle: formData.get("handle"),
+    bio: formData.get("bio") ?? undefined,
+  });
+  if (!parsed.success) return { fieldErrors: firstErrors(parsed.error) };
+
+  try {
+    await updateProfile(userId, parsed.data);
+  } catch (error) {
+    if (isAppError(error) && (error.code === "CONFLICT" || error.code === "BAD_REQUEST")) {
+      return { fieldErrors: { handle: error.message } };
+    }
+    logger.error({ err: error }, "profile update failed");
+    return { error: "Couldn't save your profile. Please try again." };
+  }
+
+  revalidatePath("/settings");
+  revalidatePath(`/profile/${parsed.data.handle}`);
+  return { ok: true, message: "Profile saved." };
+}
+
+export async function updatePreferencesAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const session = await auth();
+
+  let userId: string;
+  try {
+    userId = requireSession(session).user.id;
+  } catch {
+    return { error: "Your session expired. Please sign in again." };
+  }
+
+  const parsed = updatePreferencesSchema.safeParse({
+    styles: formData.getAll("styles"),
+    interests: formData.getAll("interests"),
+    dietary: formData.getAll("dietary"),
+    pace: formData.get("pace") || undefined,
+    budgetTier: formData.get("budgetTier") || undefined,
+    homeRegion: formData.get("homeRegion") ?? undefined,
+  });
+  if (!parsed.success) return { fieldErrors: firstErrors(parsed.error) };
+
+  try {
+    await updatePreferences(userId, parsed.data);
+  } catch (error) {
+    logger.error({ err: error }, "preferences update failed");
+    return { error: "Couldn't save your preferences. Please try again." };
+  }
+
+  revalidatePath("/settings");
+  return { ok: true, message: "Preferences saved." };
+}

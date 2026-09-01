@@ -7,19 +7,21 @@ thing. An AI assistant sits on top, acting only through validated tools.
 Full technical proposal: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Decisions log: [`docs/adr/`](docs/adr).
 
-## Status — Phase 0 (foundations)
+## Status — Phase 1 (authentication & profiles)
 
-Implemented: project scaffold, design system, Prisma + Postgres wiring, env
-validation, logging, error utilities, minimal `User` schema + migration,
-`/api/health`, landing page, CI.
+Implemented: Phase 0 foundations, plus Auth.js (email/password + Google OAuth),
+JWT sessions, route-protecting middleware, email verification via Resend (with a
+console fallback), the `users` domain module, `/settings` and
+`/profile/[handle]`, and the `TravelPreference` model.
 
-**Not yet implemented:** authentication, journeys, search, messaging, itineraries,
-the AI assistant. See the roadmap in `docs/ARCHITECTURE.md`.
+**Not yet implemented:** journeys, search, messaging, itineraries, the AI
+assistant. See the roadmap in `docs/ARCHITECTURE.md`; auth decisions are in
+`docs/adr/0003-auth-sessions-jwt.md`.
 
 ## Tech stack
 
 Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS v4 ·
-Prisma + PostgreSQL (Neon) · Zod · pino · Vitest.
+Prisma + PostgreSQL (Neon) · Auth.js v5 · Zod · pino · Resend · Vitest.
 
 ## Getting started
 
@@ -61,14 +63,20 @@ database it returns `503` with `"db": "down"`; the rest of the app still runs.
 
 ```
 src/
-  app/            Routes + composition only (no business logic)
-    api/health/   Liveness + DB readiness probe
+  app/
+    (auth)/       login, signup (minimal centred layout)
+    (app)/        settings, profile/[handle] (header + footer shell)
+    api/          auth/[...nextauth], auth/verify-email, health
   components/
-    ui/           Design-system primitives (Button, Container)
-    globe/        Composed app components (SiteHeader, SiteFooter)
-  lib/            Cross-cutting: env, db, logger, errors, utils
+    ui/           Design-system primitives (Button, Input, Field, …)
+    globe/        Composed app components (SiteHeader, forms, UserMenu, …)
+    motion/       Scroll-reveal primitives
+  modules/        Domain logic — the only place Prisma is imported
+    auth/         password, schema, verification, service, actions
+    users/        handle, schema, mappers, service, actions
+  lib/            Cross-cutting: env, db, auth, authz, logger, errors, email, forms
   styles/         Design tokens
-  test/           Test setup
+  middleware.ts   Route protection (Edge, via lib/auth.config.ts)
 prisma/           schema.prisma + migrations + seed
 docs/             Architecture proposal + ADRs
 ```
@@ -76,6 +84,8 @@ docs/             Architecture proposal + ADRs
 ## Deployment
 
 Target: Vercel (app) + Neon (Postgres). On Vercel set `DATABASE_URL`,
-`DIRECT_URL`, and `NEXT_PUBLIC_APP_URL` for both Preview and Production. The
-build command (`npm run build`) runs `prisma generate`; run
-`npm run db:migrate:deploy` against the production database as a release step.
+`DIRECT_URL`, `NEXT_PUBLIC_APP_URL` and `AUTH_SECRET` for both Preview and
+Production; add `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` and `RESEND_API_KEY` to
+enable Google sign-in and real verification emails. The build command
+(`npm run build`) runs `prisma generate`; run `npm run db:migrate:deploy`
+against the production database as a release step.

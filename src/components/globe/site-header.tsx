@@ -1,17 +1,23 @@
 import Link from "next/link";
 
+import { UserMenu } from "@/components/globe/user-menu";
+import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import { auth } from "@/lib/auth";
+import { getSessionUserSummary } from "@/modules/users/user.service";
 
-const NAV_LINKS = [
-  { label: "How it works", href: "#how-it-works" },
-  { label: "Journeys", href: "#featured" },
-  { label: "The assistant", href: "#assistant" },
-];
+interface NavLink {
+  label: string;
+  href: string;
+}
 
-export function SiteHeader() {
+export async function SiteHeader({ nav = [] }: { nav?: NavLink[] }) {
+  const session = await auth();
+  const user = session?.user?.id ? await getSessionUserSummary(session.user.id) : null;
+
   return (
     <header className="border-border bg-bg/80 sticky top-0 z-40 border-b backdrop-blur-md">
-      <Container className="flex h-16 items-center justify-between">
+      <Container className="flex h-16 items-center justify-between gap-4">
         <Link
           href="/"
           className="font-display text-ink text-lg tracking-tight"
@@ -20,21 +26,37 @@ export function SiteHeader() {
           Globe<span className="text-accent">Link</span>
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-muted hover:text-ink text-sm transition-colors"
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
+        {nav.length > 0 ? (
+          <nav className="hidden items-center gap-8 md:flex">
+            {nav.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-muted hover:text-ink text-sm transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+        ) : null}
 
-        <span className="border-border bg-surface-muted text-muted rounded-full border px-3 py-1 text-xs font-medium">
-          Private beta
-        </span>
+        <div className="flex items-center gap-3">
+          {user ? (
+            <UserMenu name={user.name} handle={user.handle} image={user.image} />
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-muted hover:text-ink text-sm font-medium transition-colors"
+              >
+                Sign in
+              </Link>
+              <Button asChild size="sm">
+                <Link href="/signup">Get started</Link>
+              </Button>
+            </>
+          )}
+        </div>
       </Container>
     </header>
   );

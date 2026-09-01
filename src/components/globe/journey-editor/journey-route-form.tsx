@@ -11,15 +11,22 @@ import type { JourneyEditDto } from "@/modules/journeys/journey.mappers";
 
 const initial: FormState = {};
 const toDateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
+const today = () => new Date().toISOString().slice(0, 10);
 
 export function JourneyRouteForm({ journey }: { journey: JourneyEditDto }) {
   const [state, action] = useActionState(updateRouteAction, initial);
   const e = state.fieldErrors ?? {};
+  const max = today();
 
   return (
     <form action={action} className="space-y-4" noValidate>
       <input type="hidden" name="journeyId" value={journey.id} />
       <FormMessage error={state.error} message={state.ok ? state.message : undefined} />
+
+      <p className="text-muted text-xs">
+        GlobeLink is for trips you&rsquo;ve already taken, so these dates can&rsquo;t be in the
+        future.
+      </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Start date" htmlFor="startDate" error={e.startDate}>
@@ -27,7 +34,9 @@ export function JourneyRouteForm({ journey }: { journey: JourneyEditDto }) {
             id="startDate"
             name="startDate"
             type="date"
+            max={max}
             defaultValue={toDateInput(journey.startDate)}
+            invalid={!!e.startDate}
           />
         </Field>
         <Field label="End date" htmlFor="endDate" error={e.endDate}>
@@ -35,6 +44,7 @@ export function JourneyRouteForm({ journey }: { journey: JourneyEditDto }) {
             id="endDate"
             name="endDate"
             type="date"
+            max={max}
             defaultValue={toDateInput(journey.endDate)}
             invalid={!!e.endDate}
           />

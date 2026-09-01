@@ -69,10 +69,19 @@ function move<T>(arr: T[], from: number, to: number): T[] {
   return next;
 }
 
+const todayStr = () => new Date().toISOString().slice(0, 10);
+
 export function ItineraryEditor({ journey }: { journey: JourneyEditDto }) {
   const [days, setDays] = useState<DayDraft[]>(() => fromDto(journey));
   const [state, setState] = useState<FormState>({});
   const [pending, startTransition] = useTransition();
+
+  // Day dates: never in the future, and within the trip window when it's set.
+  const today = todayStr();
+  const tripStart = journey.startDate ? journey.startDate.slice(0, 10) : undefined;
+  const tripEnd = journey.endDate ? journey.endDate.slice(0, 10) : undefined;
+  const dayDateMin = tripStart;
+  const dayDateMax = tripEnd && tripEnd < today ? tripEnd : today;
 
   const patchDay = (i: number, patch: Partial<DayDraft>) =>
     setDays((d) => d.map((day, idx) => (idx === i ? { ...day, ...patch } : day)));
@@ -91,15 +100,15 @@ export function ItineraryEditor({ journey }: { journey: JourneyEditDto }) {
     startTransition(async () => {
       const payload = {
         days: days.map((d) => ({
-          title: d.title || undefined,
-          date: d.date || undefined,
-          notes: d.notes || undefined,
+          title: d.title.trim() || null,
+          date: d.date || null,
+          notes: d.notes.trim() || null,
           stops: d.stops.map((s) => ({
-            time: s.time || undefined,
+            time: s.time.trim() || null,
             type: s.type,
-            title: s.title,
-            description: s.description || undefined,
-            locationName: s.locationName || undefined,
+            title: s.title.trim(),
+            description: s.description.trim() || null,
+            locationName: s.locationName.trim() || null,
           })),
         })),
       };
@@ -110,6 +119,12 @@ export function ItineraryEditor({ journey }: { journey: JourneyEditDto }) {
   return (
     <div className="space-y-4">
       <FormMessage error={state.error} message={state.ok ? state.message : undefined} />
+
+      <p className="text-muted text-xs">
+        {tripStart && tripEnd
+          ? `Day dates must fall between ${tripStart} and ${tripEnd} (your trip dates).`
+          : "Set your trip dates in the Dates section to bound day dates. Dates can't be in the future."}
+      </p>
 
       {days.length === 0 ? (
         <p className="text-muted text-sm">No days yet. Add the first one below.</p>
@@ -144,6 +159,8 @@ export function ItineraryEditor({ journey }: { journey: JourneyEditDto }) {
             <Input
               type="date"
               value={day.date}
+              min={dayDateMin}
+              max={dayDateMax}
               onChange={(ev) => patchDay(di, { date: ev.target.value })}
             />
           </div>

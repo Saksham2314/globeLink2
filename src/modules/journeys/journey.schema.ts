@@ -2,29 +2,44 @@ import { z } from "zod";
 
 import { CURRENCIES, STOP_TYPES, TRANSPORT_MODES, TRAVEL_STYLES } from "@/lib/travel-vocab";
 
+/** Optional trimmed string. Accepts string | null | undefined (form fields and
+ *  server-action serialization can produce either empty form), always yields
+ *  `string | null`. `.max()` truncates rather than erroring — friendlier here. */
 const trimmedOptional = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .optional()
-    .transform((v) => (v ? v : null));
+  z.union([z.string(), z.null(), z.undefined()]).transform((v) => {
+    const s = typeof v === "string" ? v.trim() : "";
+    return s.length > 0 ? s.slice(0, max) : null;
+  });
 
 const title = z.string().trim().min(3, "Give it a title (3+ characters)").max(120);
 
-/** Major-unit amount in the form → integer minor units (× 100). */
-const minorUnits = z
-  .union([z.string(), z.number()])
-  .optional()
+/** Major-unit amount (string or number) → integer minor units (× 100), or null.
+ *  Invalid input clears the field rather than blocking the whole save. */
+const minorUnits = z.union([z.string(), z.number(), z.null(), z.undefined()]).transform((v) => {
+  if (v === null || v === undefined || v === "") return null;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : null;
+});
+
+/** "" | null | undefined → null; otherwise coerce to a Date. */
+const optionalDate = z
+  .union([z.string(), z.date(), z.null(), z.undefined()])
   .transform((v, ctx) => {
-    if (v === undefined || v === "" || v === null) return null;
-    const n = typeof v === "number" ? v : Number(v);
-    if (!Number.isFinite(n) || n < 0) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Enter a valid amount" });
+    if (v === null || v === undefined || v === "") return null;
+    const d = v instanceof Date ? v : new Date(v);
+    if (Number.isNaN(d.getTime())) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "That date isn't valid" });
       return z.NEVER;
     }
-    return Math.round(n * 100);
+    return d;
   });
+
+/** End of the current day — the latest a "completed trip" date may be. */
+function endOfToday(): Date {
+  const d = new Date();
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
 
 // ---------------------------------------------------------------------------
 // Section schemas — each maps to one form on the edit page.
@@ -48,12 +63,24 @@ export type JourneyBasicsInput = z.infer<typeof journeyBasicsSchema>;
 
 export const journeyRouteSchema = z
   .object({
-    startDate: z.coerce.date().optional().nullable(),
-    endDate: z.coerce.date().optional().nullable(),
-    durationDays: z.coerce.number().int().min(1).max(365).optional().nullable(),
+    startDate: optionalDate,
+    endDate: optionalDate,
+    durationDays: z.union([z.string(), z.number(), z.null(), z.undefined()]).transform((v) => {
+      if (v === null || v === undefined || v === "") return null;
+      const n = Math.trunc(Number(v));
+      return Number.isFinite(n) && n >= 1 && n <= 365 ? n : null;
+    }),
   })
   .refine((v) => !(v.startDate && v.endDate) || v.endDate >= v.startDate, {
-    message: "End date can't be before the start date",
+    message: "The end date can't be before the start date",
+    path: ["endDate"],
+  })
+  .refine((v) => !v.startDate || v.startDate <= endOfToday(), {
+    message: "This is for trips you've already taken — the start date can't be in the future",
+    path: ["startDate"],
+  })
+  .refine((v) => !v.endDate || v.endDate <= endOfToday(), {
+    message: "The end date can't be in the future",
     path: ["endDate"],
   });
 export type JourneyRouteInput = z.infer<typeof journeyRouteSchema>;
@@ -78,18 +105,18 @@ export type JourneyContentInput = z.infer<typeof journeyContentSchema>;
 
 export const journeyStopSchema = z.object({
   time: trimmedOptional(40),
-  type: z.enum(STOP_TYPES).default("ACTIVITY"),
+  type: z.union([z.enum(STOP_TYPES), z.null(), z.undefined()]).transform((v) => v ?? "ACTIVITY"),
   title: z.string().trim().min(1, "Each stop needs a title").max(120),
   description: trimmedOptional(2_000),
   locationName: trimmedOptional(120),
   cost: minorUnits,
-  costCurrency: z.enum(CURRENCIES).optional().nullable(),
+  costCurrency: z.union([z.enum(CURRENCIES), z.null(), z.undefined()]).transform((v) => v ?? null),
 });
 export type JourneyStopInput = z.infer<typeof journeyStopSchema>;
 
 export const journeyDaySchema = z.object({
   title: trimmedOptional(120),
-  date: z.coerce.date().optional().nullable(),
+  date: optionalDate,
   notes: trimmedOptional(2_000),
   stops: z.array(journeyStopSchema).max(40),
 });
@@ -99,6 +126,41 @@ export const itinerarySchema = z.object({
   days: z.array(journeyDaySchema).max(60),
 });
 export type ItineraryInput = z.infer<typeof itinerarySchema>;
+
+/**
+ * Business rule for per-day dates: never in the future, and — when the trip has
+ * a start/end — within that window. Returns a user-facing message, or null when
+ * everything checks out.
+ */
+export function checkItineraryDates(
+  days: { date: Date | null }[],
+  tripStart: Date | null,
+  tripEnd: Date | null,
+): string | null {
+  const latest = endOfToday();
+  for (const [i, day] of days.entries()) {
+    if (!day.date) continue;
+    if (day.date > latest) return `Day ${i + 1}'s date can't be in the future`;
+    if (tripStart && day.date < startOfDay(tripStart)) {
+      return `Day ${i + 1}'s date is before the trip's start date`;
+    }
+    if (tripEnd && day.date > endOfDay(tripEnd)) {
+      return `Day ${i + 1}'s date is after the trip's end date`;
+    }
+  }
+  return null;
+}
+
+const startOfDay = (d: Date) => {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+};
+const endOfDay = (d: Date) => {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+};
 
 // ---------------------------------------------------------------------------
 // Publish readiness — a checklist, not a hard schema, so the UI can show

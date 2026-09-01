@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  checkItineraryDates,
   createJourneySchema,
   isPublishable,
   itinerarySchema,
@@ -59,6 +60,80 @@ describe("journeyRouteSchema", () => {
   it("accepts a duration with no dates", () => {
     const r = journeyRouteSchema.parse({ durationDays: "5" });
     expect(r.durationDays).toBe(5);
+  });
+
+  it("rejects a start date in the future", () => {
+    const nextYear = new Date();
+    nextYear.setFullYear(nextYear.getFullYear() + 1);
+    const r = journeyRouteSchema.safeParse({ startDate: nextYear.toISOString().slice(0, 10) });
+    expect(r.success).toBe(false);
+  });
+
+  it("accepts past dates", () => {
+    const r = journeyRouteSchema.safeParse({ startDate: "2024-05-01", endDate: "2024-05-06" });
+    expect(r.success).toBe(true);
+  });
+
+  it("normalises empty / null date fields to null", () => {
+    const r = journeyRouteSchema.parse({ startDate: "", endDate: null, durationDays: "" });
+    expect(r).toEqual({ startDate: null, endDate: null, durationDays: null });
+  });
+});
+
+describe("itinerary schema — null-safety", () => {
+  it("accepts null for every optional field (server-action serialization)", () => {
+    const r = itinerarySchema.safeParse({
+      days: [
+        {
+          title: null,
+          date: null,
+          notes: null,
+          stops: [
+            {
+              time: null,
+              type: null,
+              title: "Sunrise hike",
+              description: null,
+              locationName: null,
+            },
+          ],
+        },
+      ],
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      const stop = r.data.days[0]!.stops[0]!;
+      expect(stop.type).toBe("ACTIVITY");
+      expect(stop.description).toBeNull();
+      expect(r.data.days[0]!.title).toBeNull();
+    }
+  });
+});
+
+describe("checkItineraryDates", () => {
+  const start = new Date("2024-05-01");
+  const end = new Date("2024-05-06");
+
+  it("passes when day dates are inside the trip window", () => {
+    expect(checkItineraryDates([{ date: new Date("2024-05-03") }], start, end)).toBeNull();
+  });
+
+  it("flags a day before the trip starts", () => {
+    expect(checkItineraryDates([{ date: new Date("2024-04-28") }], start, end)).toMatch(/before/);
+  });
+
+  it("flags a day after the trip ends", () => {
+    expect(checkItineraryDates([{ date: new Date("2024-05-09") }], start, end)).toMatch(/after/);
+  });
+
+  it("flags a day in the future even with no trip window", () => {
+    const future = new Date();
+    future.setFullYear(future.getFullYear() + 1);
+    expect(checkItineraryDates([{ date: future }], null, null)).toMatch(/future/);
+  });
+
+  it("ignores days with no date", () => {
+    expect(checkItineraryDates([{ date: null }, { date: null }], start, end)).toBeNull();
   });
 });
 

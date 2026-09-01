@@ -6,6 +6,7 @@ import { AppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 
 import {
+  checkItineraryDates,
   createJourneySchema,
   isPublishable,
   itinerarySchema,
@@ -238,6 +239,9 @@ export async function replaceItinerary(
 ): Promise<JourneyRef> {
   const journey = await loadOwnedJourney(userId, journeyId);
   const { days } = itinerarySchema.parse(input);
+
+  const dateError = checkItineraryDates(days, journey.startDate, journey.endDate);
+  if (dateError) throw AppError.badRequest(dateError);
 
   await db.$transaction(async (tx) => {
     await tx.journeyDay.deleteMany({ where: { journeyId } });

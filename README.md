@@ -7,21 +7,22 @@ thing. An AI assistant sits on top, acting only through validated tools.
 Full technical proposal: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Decisions log: [`docs/adr/`](docs/adr).
 
-## Status — Phase 1 (authentication & profiles)
+## Status — Phase 2 (journey system)
 
-Implemented: Phase 0 foundations, plus Auth.js (email/password + Google OAuth),
-JWT sessions, route-protecting middleware, email verification via Resend (with a
-console fallback), the `users` domain module, `/settings` and
-`/profile/[handle]`, and the `TravelPreference` model.
+Implemented: Phase 0–1, plus the journey system — create a draft, fill it in on a
+sectioned edit page (basics, dates, budget, day-by-day itinerary, story & tips,
+photos), publish, and a public page at `/journeys/<slug>`. Photos go to Vercel
+Blob; markdown is sanitised on render. A profile now lists its author's journeys.
 
-**Not yet implemented:** journeys, search, messaging, itineraries, the AI
-assistant. See the roadmap in `docs/ARCHITECTURE.md`; auth decisions are in
-`docs/adr/0003-auth-sessions-jwt.md`.
+**Not yet implemented:** discovery/search, saving journeys, messaging, personal
+itineraries, the AI assistant. See `docs/ARCHITECTURE.md`; phase decisions are in
+`docs/adr/`.
 
 ## Tech stack
 
 Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS v4 ·
-Prisma + PostgreSQL (Neon) · Auth.js v5 · Zod · pino · Resend · Vitest.
+Prisma + PostgreSQL (Neon) · Auth.js v5 · Vercel Blob · Zod · pino · Resend ·
+react-markdown · Vitest.
 
 ## Getting started
 

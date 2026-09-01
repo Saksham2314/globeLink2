@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { JourneyCard } from "@/components/globe/journey-card";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
+import { listByAuthorHandle } from "@/modules/journeys/journey.service";
 import { getCurrentUser, getPublicProfileByHandle } from "@/modules/users/user.service";
 
 type Params = { params: Promise<{ handle: string }> };
@@ -28,6 +30,8 @@ export default async function ProfilePage({ params }: Params) {
   const session = await auth();
   const me = session?.user?.id ? await getCurrentUser(session.user.id) : null;
   const viewingOwn = me?.handle === profile.handle;
+
+  const journeys = await listByAuthorHandle(handle, { viewerId: session?.user?.id });
 
   const { preferences } = profile;
   const initial = (profile.name ?? profile.handle).trim().charAt(0).toUpperCase() || "?";
@@ -76,6 +80,34 @@ export default async function ProfilePage({ params }: Params) {
       {profile.bio ? (
         <p className="text-ink mt-6 max-w-prose text-[0.95rem] leading-relaxed">{profile.bio}</p>
       ) : null}
+
+      <section className="mt-10">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-ink text-xl">
+            Journeys
+            {journeys.length > 0 ? (
+              <span className="text-muted ml-2 text-sm font-normal">{journeys.length}</span>
+            ) : null}
+          </h2>
+          {viewingOwn ? (
+            <Button asChild size="sm">
+              <Link href="/journeys/new">New journey</Link>
+            </Button>
+          ) : null}
+        </div>
+
+        {journeys.length > 0 ? (
+          <div className="mt-6 grid gap-6 sm:grid-cols-2">
+            {journeys.map((j) => (
+              <JourneyCard key={j.slug} journey={j} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted mt-4 text-sm">
+            {viewingOwn ? "You haven't published a journey yet." : "No published journeys yet."}
+          </p>
+        )}
+      </section>
 
       {tagRows.length > 0 ? (
         <div className="mt-8 space-y-6">

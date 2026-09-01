@@ -1,7 +1,7 @@
 // GlobeLink — Prisma schema
-// Phase 1 (auth & profiles): User is extended with password + verification,
-// the Auth.js adapter models are added, and TravelPreference lands.
-// Later phases add Journey, Itinerary, Conversation, AgentSession, etc.
+// Phase 1 added auth + profiles. Phase 2 adds the Journey system: a published
+// trip with a day-by-day itinerary, photos and tags.
+// Later phases add SavedJourney, Itinerary, Conversation, AgentSession, etc.
 // per docs/ARCHITECTURE.md.
 
 generator client {
@@ -35,6 +35,7 @@ model User {
   accounts    Account[]
   sessions    Session[]
   preferences TravelPreference?
+  journeys    Journey[]
 
   @@map("users")
 }
@@ -110,4 +111,161 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Journeys (Phase 2)
+// ---------------------------------------------------------------------------
+
+/// Fixed sets → Postgres enums (integrity matters; the AI reads this later).
+/// Open-ended vocab (transport modes, travel styles) stays as String[] +
+/// Zod validation — see src/modules/journeys/journey.schema.ts.
+enum JourneyStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum StopType {
+  ACTIVITY
+  TRANSIT
+  LODGING
+  FOOD
+  NOTE
+}
+
+/// A completed trip written up by its author. Public once `status` is
+/// PUBLISHED; a DRAFT is visible only to the author. Soft-deleted via
+/// `deletedAt` so references from future SavedJourney rows don't dangle.
+model Journey {
+  id       String        @id @default(cuid())
+  authorId String
+  status   JourneyStatus @default(DRAFT)
+
+  title   String
+  slug    String  @unique
+  summary String?
+
+  originName      String?
+  destinationName String?
+  country         String?
+  region          String?
+  lat             Float?
+  lng             Float?
+
+  startDate    DateTime?
+  endDate      DateTime?
+  durationDays Int?
+
+  transportModes String[] @default([])
+  travelStyle    String[] @default([])
+
+  /// Integer minor units (e.g. paise) + ISO 4217 code.
+  budgetAmount    Int?
+  budgetCurrency  String @default("INR")
+  budgetBreakdown Json?
+
+  /// Markdown.
+  description String?
+  tips        String[] @default([])
+
+  viewCount   Int       @default(0)
+  publishedAt DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  author User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  images JourneyImage[]
+  days   JourneyDay[]
+  tags   JourneyTag[]
+
+  @@index([authorId])
+  @@index([status, publishedAt])
+  @@map("journeys")
+}
+
+model JourneyImage {
+  id         String   @id @default(cuid())
+  journeyId  String
+  /// Public Blob URL.
+  url        String
+  /// Blob pathname, kept so the file can be deleted from storage.
+  storageKey String
+  width      Int?
+  height     Int?
+  caption    String?
+  position   Int      @default(0)
+  /// Exactly one per journey; enforced in the service.
+  isCover    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  journey Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@index([journeyId])
+  @@map("journey_images")
+}
+
+model JourneyDay {
+  id        String    @id @default(cuid())
+  journeyId String
+  dayNumber Int
+  title     String?
+  date      DateTime?
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  journey Journey       @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  stops   JourneyStop[]
+
+  @@unique([journeyId, dayNumber])
+  @@index([journeyId])
+  @@map("journey_days")
+}
+
+model JourneyStop {
+  id           String   @id @default(cuid())
+  dayId        String
+  position     Int      @default(0)
+  /// Free text ("09:30", "Morning") — kept simple on purpose.
+  time         String?
+  type         StopType @default(ACTIVITY)
+  title        String
+  description  String?
+  locationName String?
+  lat          Float?
+  lng          Float?
+  cost         Int?
+  costCurrency String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  day JourneyDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  @@index([dayId])
+  @@map("journey_stops")
+}
+
+model Tag {
+  id        String       @id @default(cuid())
+  slug      String       @unique
+  label     String
+  createdAt DateTime     @default(now())
+  journeys  JourneyTag[]
+
+  @@map("tags")
+}
+
+/// Join table: normalised so Phase 3 can build tag pages and filters.
+model JourneyTag {
+  journeyId String
+  tagId     String
+
+  journey Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([journeyId, tagId])
+  @@index([tagId])
+  @@map("journey_tags")
 }

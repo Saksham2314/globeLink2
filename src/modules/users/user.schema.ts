@@ -1,26 +1,15 @@
 import { z } from "zod";
 
+import { TRAVEL_STYLES } from "@/lib/travel-vocab";
+
 import { HANDLE_PATTERN } from "./handle";
 
 /**
- * Fixed vocabularies for travel preferences. Kept here (not as Postgres enums)
- * so the lists can evolve without a migration; the DB stores plain text and
- * these schemas are the gate. UI labels live alongside the values.
+ * Fixed vocabularies for travel preferences. Kept as plain text (not Postgres
+ * enums) so the lists can evolve without a migration; these schemas are the
+ * gate. `TRAVEL_STYLES` is shared with journeys, so it lives in lib/travel-vocab.
  */
-export const TRAVEL_STYLES = [
-  "solo",
-  "couple",
-  "family",
-  "friends",
-  "backpacking",
-  "luxury",
-  "roadtrip",
-  "adventure",
-  "slow",
-  "city",
-  "nature",
-  "culture",
-] as const;
+export { TRAVEL_STYLES } from "@/lib/travel-vocab";
 
 export const TRAVEL_PACES = ["relaxed", "balanced", "packed"] as const;
 

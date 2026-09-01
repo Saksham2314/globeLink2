@@ -10,7 +10,13 @@ import type { NextAuthConfig } from "next-auth";
  */
 
 /** Route prefixes that require a signed-in user. */
-const PROTECTED_PREFIXES = ["/settings"];
+const PROTECTED_PREFIXES = ["/settings", "/journeys/new"];
+
+/** Also protected: creating/editing a journey. `/journeys/<slug>` (view) is public. */
+function requiresAuth(pathname: string): boolean {
+  if (PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
+  return pathname.startsWith("/journeys/") && pathname.endsWith("/edit");
+}
 
 export const authConfig = {
   pages: {
@@ -23,11 +29,7 @@ export const authConfig = {
      * sign-in page with a `callbackUrl` back to the requested path.
      */
     authorized({ auth, request: { nextUrl } }) {
-      const isSignedIn = Boolean(auth?.user);
-      const needsAuth = PROTECTED_PREFIXES.some(
-        (prefix) => nextUrl.pathname === prefix || nextUrl.pathname.startsWith(`${prefix}/`),
-      );
-      return needsAuth ? isSignedIn : true;
+      return requiresAuth(nextUrl.pathname) ? Boolean(auth?.user) : true;
     },
     /** Carry the user id from the token onto the session. */
     session({ session, token }) {

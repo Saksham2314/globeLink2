@@ -42,7 +42,12 @@ export async function SiteHeader({ nav = [] }: { nav?: NavLink[] }) {
 
         <div className="flex items-center gap-3">
           {user ? (
-            <UserMenu name={user.name} handle={user.handle} image={user.image} />
+            <>
+              <Button asChild size="sm" variant="secondary" className="hidden sm:inline-flex">
+                <Link href="/journeys/new">Create</Link>
+              </Button>
+              <UserMenu name={user.name} handle={user.handle} image={user.image} />
+            </>
           ) : (
             <>
               <Link

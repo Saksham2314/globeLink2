@@ -46,6 +46,12 @@ export const env = createEnv({
      *  testing but only delivers to your own Resend account address until a
      *  custom domain is verified. */
     EMAIL_FROM: z.string().default("GlobeLink <onboarding@resend.dev>"),
+
+    // ---- Blob storage (Vercel Blob) ----------------------------------
+    /** Read/write token for the Vercel Blob store. Auto-provisioned by
+     *  `vercel blob create-store` into .env.local and the project env.
+     *  Optional so builds without it still pass; image upload requires it. */
+    BLOB_READ_WRITE_TOKEN: z.string().optional(),
   },
 
   /**
@@ -69,6 +75,7 @@ export const env = createEnv({
     AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
+    BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
 
@@ -85,3 +92,6 @@ export const isGoogleAuthEnabled = Boolean(env.AUTH_GOOGLE_ID && env.AUTH_GOOGLE
 
 /** Whether real transactional email is configured. */
 export const isEmailEnabled = Boolean(env.RESEND_API_KEY);
+
+/** Whether Blob image storage is configured. */
+export const isBlobEnabled = Boolean(env.BLOB_READ_WRITE_TOKEN);

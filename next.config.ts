@@ -23,6 +23,14 @@ const nextConfig: NextConfig = {
   // pino ships its own transports/worker files; let Next require it at runtime
   // instead of bundling it into the server output.
   serverExternalPackages: ["pino", "pino-pretty"],
+  images: {
+    remotePatterns: [
+      // Vercel Blob (journey photos)
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+      // Google account avatars
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
+    ],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

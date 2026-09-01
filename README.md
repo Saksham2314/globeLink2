@@ -7,16 +7,15 @@ thing. An AI assistant sits on top, acting only through validated tools.
 Full technical proposal: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Decisions log: [`docs/adr/`](docs/adr).
 
-## Status — Phase 2 (journey system)
+## Status — Phase 3 (discovery & search)
 
-Implemented: Phase 0–1, plus the journey system — create a draft, fill it in on a
-sectioned edit page (basics, dates, budget, day-by-day itinerary, story & tips,
-photos), publish, and a public page at `/journeys/<slug>`. Photos go to Vercel
-Blob; markdown is sanitised on render. A profile now lists its author's journeys.
+Implemented: Phase 0–2, plus discovery — an `/explore` page with full-text search
+(`ts_rank` over a generated `tsvector` column), filters (destination, budget,
+duration, style, transport), URL-driven state and keyset "Load more" paging; and
+saving journeys (a heart on every card / journey page, a `/saved` page).
 
-**Not yet implemented:** discovery/search, saving journeys, messaging, personal
-itineraries, the AI assistant. See `docs/ARCHITECTURE.md`; phase decisions are in
-`docs/adr/`.
+**Not yet implemented:** messaging, personal itineraries, the AI assistant. See
+`docs/ARCHITECTURE.md`; phase decisions are in `docs/adr/`.
 
 ## Tech stack
 

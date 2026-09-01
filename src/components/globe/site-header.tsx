@@ -18,13 +18,21 @@ export async function SiteHeader({ nav = [] }: { nav?: NavLink[] }) {
   return (
     <header className="border-border bg-bg/80 sticky top-0 z-40 border-b backdrop-blur-md">
       <Container className="flex h-16 items-center justify-between gap-4">
-        <Link
-          href="/"
-          className="font-display text-ink text-lg tracking-tight"
-          aria-label="GlobeLink home"
-        >
-          Globe<span className="text-accent">Link</span>
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link
+            href="/"
+            className="font-display text-ink text-lg tracking-tight"
+            aria-label="GlobeLink home"
+          >
+            Globe<span className="text-accent">Link</span>
+          </Link>
+          <Link
+            href="/explore"
+            className="text-muted hover:text-ink text-sm font-medium transition-colors"
+          >
+            Explore
+          </Link>
+        </div>
 
         {nav.length > 0 ? (
           <nav className="hidden items-center gap-8 md:flex">

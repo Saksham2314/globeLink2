@@ -36,6 +36,7 @@ model User {
   sessions    Session[]
   preferences TravelPreference?
   journeys    Journey[]
+  saved       SavedJourney[]
 
   @@map("users")
 }
@@ -175,14 +176,36 @@ model Journey {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  author User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  images JourneyImage[]
-  days   JourneyDay[]
-  tags   JourneyTag[]
+  /// Full-text search vector. A Postgres GENERATED column maintained by the
+  /// database (see the migration) — never written from application code, and
+  /// never selected (Prisma can't represent tsvector).
+  searchVector Unsupported("tsvector")?
+
+  author  User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  images  JourneyImage[]
+  days    JourneyDay[]
+  tags    JourneyTag[]
+  savedBy SavedJourney[]
 
   @@index([authorId])
   @@index([status, publishedAt])
   @@map("journeys")
+}
+
+/// A user bookmarking a published journey. Composite PK — a user can save a
+/// journey at most once.
+model SavedJourney {
+  userId    String
+  journeyId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journey Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@id([userId, journeyId])
+  @@index([userId, createdAt])
+  @@index([journeyId])
+  @@map("saved_journeys")
 }
 
 model JourneyImage {

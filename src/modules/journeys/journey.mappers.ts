@@ -25,6 +25,7 @@ function coverUrl(images: JourneyImage[]): string | null {
 }
 
 export interface JourneyCardDto {
+  id: string;
   slug: string;
   title: string;
   summary: string | null;
@@ -36,10 +37,13 @@ export interface JourneyCardDto {
   budgetCurrency: string;
   coverImageUrl: string | null;
   author: { name: string | null; handle: string | null; image: string | null };
+  /** Whether the current viewer has saved this journey (set only when known). */
+  isSaved?: boolean;
 }
 
 export function toCardDto(j: ListJourney): JourneyCardDto {
   return {
+    id: j.id,
     slug: j.slug,
     title: j.title,
     summary: j.summary,

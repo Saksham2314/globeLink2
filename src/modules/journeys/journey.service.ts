@@ -32,7 +32,13 @@ import {
 } from "./journey.mappers";
 import { deleteStoredImage, type StoredImage } from "./journey.storage";
 
-const AUTHOR_SELECT = { name: true, handle: true, image: true, bio: true } as const;
+export const AUTHOR_SELECT = { name: true, handle: true, image: true, bio: true } as const;
+
+/** Prisma include for building a `JourneyCardDto`. */
+export const CARD_INCLUDE = {
+  images: true,
+  author: { select: AUTHOR_SELECT },
+} as const;
 
 const FULL_INCLUDE = {
   images: true,
@@ -115,14 +121,27 @@ export async function getForEdit(userId: string, slug: string): Promise<JourneyE
 export async function getPublicJourney(
   slug: string,
   viewerId?: string,
-): Promise<{ journey: JourneyDetailDto; isViewerAuthor: boolean } | null> {
+): Promise<{
+  journey: JourneyDetailDto;
+  journeyId: string;
+  isViewerAuthor: boolean;
+  isSaved: boolean;
+} | null> {
   const journey = await db.journey.findUnique({ where: { slug }, include: FULL_INCLUDE });
   if (!journey || journey.deletedAt) return null;
 
   const isViewerAuthor = Boolean(viewerId) && journey.authorId === viewerId;
   if (journey.status !== "PUBLISHED" && !isViewerAuthor) return null;
 
-  return { journey: toDetailDto(journey), isViewerAuthor };
+  const isSaved = viewerId
+    ? Boolean(
+        await db.savedJourney.findUnique({
+          where: { userId_journeyId: { userId: viewerId, journeyId: journey.id } },
+        }),
+      )
+    : false;
+
+  return { journey: toDetailDto(journey), journeyId: journey.id, isViewerAuthor, isSaved };
 }
 
 /** Journeys authored by `authorId`. Drafts included only when the viewer is the author. */

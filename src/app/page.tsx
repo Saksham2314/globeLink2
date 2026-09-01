@@ -66,9 +66,9 @@ export default function HomePage() {
               </RevealItem>
 
               <RevealItem className="w-full max-w-xl">
-                {/* Search preview — presentational only in Phase 0. */}
                 <form
-                  aria-label="Search journeys (coming soon)"
+                  action="/explore"
+                  aria-label="Search journeys"
                   className="border-border-strong bg-surface flex w-full items-center gap-2 rounded-lg border p-2 shadow-sm"
                 >
                   <svg
@@ -85,16 +85,22 @@ export default function HomePage() {
                   <input
                     type="text"
                     name="q"
-                    disabled
-                    placeholder="Try &ldquo;4 days in Manali under &#8377;15,000&rdquo;"
+                    placeholder="Try &ldquo;Manali&rdquo; or &ldquo;coastal Portugal&rdquo;"
                     className="text-ink placeholder:text-muted h-10 flex-1 bg-transparent px-1 text-sm focus:outline-none"
                   />
-                  <span className="bg-surface-muted text-muted rounded-md px-3 py-2 text-xs font-medium">
-                    Soon
-                  </span>
+                  <button
+                    type="submit"
+                    className="bg-accent text-accent-contrast hover:bg-accent-hover rounded-md px-3 py-2 text-xs font-medium transition-colors"
+                  >
+                    Search
+                  </button>
                 </form>
                 <p className="text-muted mt-3 text-xs">
-                  Discovery opens up as the first journeys come online.
+                  Or{" "}
+                  <a href="/explore" className="text-accent hover:underline">
+                    browse everything
+                  </a>
+                  .
                 </p>
               </RevealItem>
 

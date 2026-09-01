@@ -29,6 +29,8 @@
   --color-danger: var(--gl-danger);
   --color-danger-soft: var(--gl-danger-soft);
   --color-success: var(--gl-success);
+  --color-heart: var(--gl-heart);
+  --color-heart-soft: var(--gl-heart-soft);
 
   --radius-sm: var(--gl-radius-sm);
   --radius-md: var(--gl-radius-md);

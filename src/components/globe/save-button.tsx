@@ -84,7 +84,7 @@ export function SaveButton({
       className={cn(
         base,
         saved
-          ? "border-accent bg-accent-soft text-accent"
+          ? "border-heart/40 bg-heart-soft text-heart"
           : "border-border-strong bg-surface/90 text-muted hover:text-ink",
         className,
       )}

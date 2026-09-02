@@ -52,6 +52,13 @@ export const env = createEnv({
      *  `vercel blob create-store` into .env.local and the project env.
      *  Optional so builds without it still pass; image upload requires it. */
     BLOB_READ_WRITE_TOKEN: z.string().optional(),
+
+    // ---- AI (Anthropic) --------------------------------------------
+    /** Anthropic API key for the AI layer (constraint extraction now; the agent
+     *  loop later). Optional: when absent, AI features degrade gracefully —
+     *  natural-language search falls back to plain text search and every other
+     *  feature is unaffected. Server-only; set a spend cap on the key. */
+    ANTHROPIC_API_KEY: z.string().optional(),
   },
 
   /**
@@ -76,6 +83,7 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
     BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
 
@@ -95,3 +103,7 @@ export const isEmailEnabled = Boolean(env.RESEND_API_KEY);
 
 /** Whether Blob image storage is configured. */
 export const isBlobEnabled = Boolean(env.BLOB_READ_WRITE_TOKEN);
+
+/** Whether the AI layer can call a model. When false, AI features fall back
+ *  (natural-language search → plain text search) and nothing else changes. */
+export const isAiEnabled = Boolean(env.ANTHROPIC_API_KEY);

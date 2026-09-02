@@ -3,9 +3,11 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { ExploreFilters } from "@/components/globe/explore-filters";
+import { ExploreNlSearch } from "@/components/globe/explore-nl-search";
 import { PaginatedJourneyGrid } from "@/components/globe/paginated-journey-grid";
 import { Container } from "@/components/ui/container";
 import { auth } from "@/lib/auth";
+import { isAiEnabled } from "@/lib/env";
 import { loadMoreSearchAction } from "@/modules/search/search.actions";
 import { hasActiveFilters, searchParamsSchema } from "@/modules/search/search.schema";
 import { searchJourneys } from "@/modules/search/search.service";
@@ -44,6 +46,10 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
         <h1 className="font-display text-ink text-3xl">Explore journeys</h1>
         <p className="text-muted mt-1 text-sm">Real trips, from the people who took them.</p>
       </header>
+
+      <div className="mb-4">
+        <ExploreNlSearch enabled={isAiEnabled} />
+      </div>
 
       <Suspense fallback={<div className="border-border h-40 rounded-lg border" />}>
         <ExploreFilters />

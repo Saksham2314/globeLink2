@@ -32,14 +32,15 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  preferences   TravelPreference?
-  journeys      Journey[]
-  saved         SavedJourney[]
-  conversations ConversationParticipant[]
-  sentMessages  Message[]
-  itineraries   Itinerary[]
+  accounts       Account[]
+  sessions       Session[]
+  preferences    TravelPreference?
+  journeys       Journey[]
+  saved          SavedJourney[]
+  conversations  ConversationParticipant[]
+  sentMessages   Message[]
+  itineraries    Itinerary[]
+  agentToolCalls AgentToolCall[]
 
   @@map("users")
 }
@@ -441,4 +442,42 @@ model PlanItem {
 
   @@index([planDayId])
   @@map("plan_items")
+}
+
+// ---------------------------------------------------------------------------
+// AI foundation (Phase 6)
+// ---------------------------------------------------------------------------
+
+/// Outcome of a single AI tool invocation, mirroring the tool factory's
+/// result contract (src/ai/tools/define-tool.ts).
+enum AgentToolCallStatus {
+  OK
+  ERROR
+  DENIED
+  AWAITING_CONFIRMATION
+}
+
+/// Observability row written for every tool call the factory runs. `sessionId`
+/// / `messageId` stay null until Phase 7 adds AgentSession / AgentMessage (the
+/// FKs land in that migration). No agent loop exists yet in Phase 6 — the two
+/// read tools are exercised directly and via natural-language search.
+model AgentToolCall {
+  id        String              @id @default(cuid())
+  sessionId String?
+  messageId String?
+  userId    String?
+  toolName  String
+  args      Json
+  result    Json
+  status    AgentToolCallStatus
+  latencyMs Int
+  error     String?
+  createdAt DateTime            @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([sessionId, createdAt])
+  @@index([toolName, createdAt])
+  @@map("agent_tool_calls")
 }

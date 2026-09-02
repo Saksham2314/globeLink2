@@ -7,14 +7,18 @@ thing. An AI assistant sits on top, acting only through validated tools.
 Full technical proposal: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Decisions log: [`docs/adr/`](docs/adr).
 
-## Status — Phase 5 (personal itineraries)
+## Status — Phase 6 (AI foundation)
 
-Implemented: Phase 0–4, plus private trip planning — an `/itineraries` list, a
-create screen, and a single always-editable page per plan with a day-by-day
-builder, a live cost estimate, and a "Plan my own" button on journey pages that
-forks a published journey into an editable plan.
+Implemented: Phase 0–5, plus the AI foundation — a `defineTool` factory (strict
+Zod schema, `read`/`mutate` kind, per-call `AgentToolCall` logging, normalized
+result contract), the `searchJourneys` and `getJourney` read tools over the
+domain services, and constraint extraction (`generateObject` on Claude Haiku)
+wired into a natural-language search box on Explore. The AI layer is
+structurally forbidden from importing the database. Works without an
+`ANTHROPIC_API_KEY` — natural-language search falls back to plain text search.
 
-**Not yet implemented:** the AI assistant. See `docs/ARCHITECTURE.md`; phase
+**Not yet implemented:** the agent loop and `/assistant` workspace (Phase 7),
+mutating tools + confirmation (Phase 8). See `docs/ARCHITECTURE.md`; phase
 decisions are in `docs/adr/`.
 
 ## Tech stack

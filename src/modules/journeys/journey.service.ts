@@ -149,6 +149,25 @@ export async function getPublicJourney(
   };
 }
 
+/** Public detail view resolved by slug **or** id. Used by the AI `getJourney`
+ *  tool. Same visibility rule as `getPublicJourney`: a draft is invisible
+ *  unless the viewer authored it. Returns null when there is nothing to show. */
+export async function getPublicJourneyDetail(
+  ref: string,
+  viewerId?: string,
+): Promise<JourneyDetailDto | null> {
+  const journey = await db.journey.findFirst({
+    where: { OR: [{ slug: ref }, { id: ref }], deletedAt: null },
+    include: FULL_INCLUDE,
+  });
+  if (!journey) return null;
+
+  const isViewerAuthor = Boolean(viewerId) && journey.authorId === viewerId;
+  if (journey.status !== "PUBLISHED" && !isViewerAuthor) return null;
+
+  return toDetailDto(journey);
+}
+
 /** Journeys authored by `authorId`. Drafts included only when the viewer is the author. */
 export async function listByAuthor(
   authorId: string,

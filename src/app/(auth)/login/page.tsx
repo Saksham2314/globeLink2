@@ -6,6 +6,7 @@ import { LoginForm } from "@/components/globe/login-form";
 import { FormMessage } from "@/components/ui/field";
 import { auth } from "@/lib/auth";
 import { isGoogleAuthEnabled } from "@/lib/env";
+import { getSessionUserSummary } from "@/modules/users/user.service";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -16,8 +17,12 @@ export default async function LoginPage({
 }) {
   const { next, verified, verify_error } = await searchParams;
 
+  // Only treat the session as signed-in if the user still exists — a stale JWT
+  // whose account is gone must fall through to the form, not bounce to
+  // /settings (which redirects back here → loop).
   const session = await auth();
-  if (session?.user) {
+  const me = session?.user?.id ? await getSessionUserSummary(session.user.id) : null;
+  if (me) {
     redirect(next && next.startsWith("/") ? next : "/settings");
   }
 

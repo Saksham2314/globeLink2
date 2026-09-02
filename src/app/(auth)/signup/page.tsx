@@ -5,12 +5,16 @@ import { GoogleButton } from "@/components/globe/google-button";
 import { SignupForm } from "@/components/globe/signup-form";
 import { auth } from "@/lib/auth";
 import { isGoogleAuthEnabled } from "@/lib/env";
+import { getSessionUserSummary } from "@/modules/users/user.service";
 
 export const metadata: Metadata = { title: "Create account" };
 
 export default async function SignupPage() {
+  // Only redirect away if the session's user actually exists — a stale JWT
+  // whose account is gone must reach the form, not loop through /settings.
   const session = await auth();
-  if (session?.user) redirect("/settings");
+  const me = session?.user?.id ? await getSessionUserSummary(session.user.id) : null;
+  if (me) redirect("/settings");
 
   return (
     <div className="space-y-6">

@@ -42,6 +42,7 @@ model User {
   itineraries    Itinerary[]
   agentSessions  AgentSession[]
   agentToolCalls AgentToolCall[]
+  auditLogs      AuditLog[]
 
   @@map("users")
 }
@@ -486,6 +487,28 @@ model AgentToolCall {
   @@index([sessionId, createdAt])
   @@index([toolName, createdAt])
   @@map("agent_tool_calls")
+}
+
+/// One row per data change the assistant made on the user's behalf, after the
+/// user confirmed it (saveJourney is inline but still audited). Distinct from
+/// AgentToolCall (per-invocation observability): this is "what changed". Also
+/// backs the per-session / per-tool mutation caps.
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  sessionId  String?
+  action     String
+  targetType String
+  targetId   String
+  summary    String
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([sessionId])
+  @@index([userId, action, createdAt])
+  @@map("audit_logs")
 }
 
 // ---------------------------------------------------------------------------

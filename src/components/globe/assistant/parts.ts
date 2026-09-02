@@ -38,6 +38,15 @@ export function toolNameOf(p: ToolPart): string {
   return p.type === "dynamic-tool" ? (p.toolName ?? "tool") : p.type.replace(/^tool-/, "");
 }
 
+/** Tools whose call the user must confirm before it runs. */
+export const CONFIRM_TOOL_NAMES: ReadonlySet<string> = new Set([
+  "createItinerary",
+  "updateItinerary",
+  "sendMessage",
+]);
+
+const CANVAS_TOOL_NAMES: ReadonlySet<string> = new Set(["searchJourneys", "getJourney"]);
+
 // ---- Tool output shapes (mirror src/ai/tools/journey-shape.ts) -------------
 
 export interface CanvasJourneyCard {
@@ -89,13 +98,20 @@ export interface SearchToolInput {
   sort?: string;
 }
 
-/** The most recent successful tool result across the whole transcript. */
+/** The most recent successful result from a canvas-renderable tool. */
 export function latestToolResult(messages: UIMessage[]): ToolPart | null {
   for (let i = messages.length - 1; i >= 0; i--) {
     const parts = messages[i]?.parts ?? [];
     for (let j = parts.length - 1; j >= 0; j--) {
       const p = parts[j]!;
-      if (isToolPart(p) && p.state === "output-available" && p.output?.ok) return p;
+      if (
+        isToolPart(p) &&
+        p.state === "output-available" &&
+        p.output?.ok &&
+        CANVAS_TOOL_NAMES.has(toolNameOf(p))
+      ) {
+        return p;
+      }
     }
   }
   return null;

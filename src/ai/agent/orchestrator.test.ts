@@ -75,7 +75,7 @@ describe("streamAgentReply", () => {
     await response.text();
   });
 
-  it("advertises both read tools to the model", async () => {
+  it("advertises the full tool set to the model", async () => {
     currentModel = textModel(["ok"]);
     const result = streamAgentReply({
       uiMessages: userTurn("hi"),
@@ -84,6 +84,13 @@ describe("streamAgentReply", () => {
     });
     await result.consumeStream();
     const names = (currentModel.doStreamCalls[0]!.tools ?? []).map((t) => t.name).sort();
-    expect(names).toEqual(["getJourney", "searchJourneys"]);
+    expect(names).toEqual([
+      "createItinerary",
+      "getJourney",
+      "saveJourney",
+      "searchJourneys",
+      "sendMessage",
+      "updateItinerary",
+    ]);
   });
 });

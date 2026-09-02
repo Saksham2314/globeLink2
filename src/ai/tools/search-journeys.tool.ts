@@ -9,7 +9,13 @@ import { toToolJourneyCard } from "./journey-shape";
 
 const input = z
   .object({
-    query: z.string().trim().min(1).max(120).optional().describe("Free text — matched against title, summary and description."),
+    query: z
+      .string()
+      .trim()
+      .min(1)
+      .max(120)
+      .optional()
+      .describe("Free text — matched against title, summary and description."),
     destination: z.string().trim().min(1).max(80).optional().describe("City or place name."),
     country: z.string().trim().min(1).max(80).optional(),
     maxBudget: z
@@ -20,15 +26,30 @@ const input = z
       .optional()
       .describe("Upper bound on total trip budget, in MAJOR currency units (e.g. 80000)."),
     minDays: z.number().int().positive().max(365).optional(),
-    maxDays: z.number().int().positive().max(365).optional().describe("Upper bound on trip length in days."),
+    maxDays: z
+      .number()
+      .int()
+      .positive()
+      .max(365)
+      .optional()
+      .describe("Upper bound on trip length in days."),
     styles: z
       .array(z.enum(TRAVEL_STYLES))
       .max(TRAVEL_STYLES.length)
       .optional()
       .describe("Any of the fixed travel-style vocabulary."),
     transport: z.array(z.enum(TRANSPORT_MODES)).max(TRANSPORT_MODES.length).optional(),
-    sort: z.enum(SORTS).optional().describe("Result ordering. Defaults to best text match, else most recent."),
-    limit: z.number().int().positive().max(20).optional().describe("Max results (1-20, default 10)."),
+    sort: z
+      .enum(SORTS)
+      .optional()
+      .describe("Result ordering. Defaults to best text match, else most recent."),
+    limit: z
+      .number()
+      .int()
+      .positive()
+      .max(20)
+      .optional()
+      .describe("Max results (1-20, default 10)."),
   })
   .strict();
 

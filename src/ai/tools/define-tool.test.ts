@@ -91,20 +91,38 @@ describe("defineTool — error normalization", () => {
 });
 
 describe("defineTool — mutate + confirm", () => {
-  it("refuses to execute without a confirmation step (Phase 6)", async () => {
-    const handler = vi.fn();
-    const tool = defineTool({
+  const makeTool = (handler = vi.fn()) =>
+    defineTool({
       name: "danger",
-      description: "mutates",
+      description: "mutates the world",
       kind: "mutate",
       confirm: true,
-      input: z.object({}).strict(),
+      input: z.object({ n: z.number() }).strict(),
       handler,
     });
-    const res = await tool.run({}, ctx);
+
+  it("run() stops at the confirmation gate without invoking the handler", async () => {
+    const handler = vi.fn();
+    const res = await makeTool(handler).run({ n: 1 }, ctx);
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error.code).toBe("NEEDS_CONFIRMATION");
     expect(handler).not.toHaveBeenCalled();
     expect(loggedCall()).toMatchObject({ status: "AWAITING_CONFIRMATION" });
+  });
+
+  it("execute() bypasses the gate and runs the handler", async () => {
+    const handler = vi.fn().mockResolvedValue({ done: true });
+    const res = await makeTool(handler).execute({ n: 2 }, ctx);
+    expect(res).toEqual({ ok: true, data: { done: true } });
+    expect(handler).toHaveBeenCalledWith({ n: 2 }, ctx);
+    expect(loggedCall()).toMatchObject({ status: "OK" });
+  });
+
+  it("execute() still validates args", async () => {
+    const handler = vi.fn();
+    const res = await makeTool(handler).execute({ n: "not a number" }, ctx);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.code).toBe("BAD_ARGS");
+    expect(handler).not.toHaveBeenCalled();
   });
 });

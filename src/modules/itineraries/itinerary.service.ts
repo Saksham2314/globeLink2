@@ -10,7 +10,6 @@ import {
   itineraryMetaSchema,
   planSchema,
   type CreateItineraryInput,
-  type ItineraryMetaInput,
   type ItineraryStatusValue,
 } from "./itinerary.schema";
 import {
@@ -145,7 +144,7 @@ export async function listMine(
 // Mutations
 // ---------------------------------------------------------------------------
 
-export async function updateMeta(userId: string, id: string, input: ItineraryMetaInput) {
+export async function updateMeta(userId: string, id: string, input: unknown) {
   await loadOwned(userId, id);
   const d = itineraryMetaSchema.parse(input);
   await db.itinerary.update({

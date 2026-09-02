@@ -6,20 +6,27 @@ vi.mock("@/modules/agent/agent-tool-call.service", () => ({
 
 const { buildAgentTools } = await import("./to-ai-sdk-tool");
 
+const READ_AND_INLINE = ["getJourney", "saveJourney", "searchJourneys"];
+const CONFIRM = ["createItinerary", "sendMessage", "updateItinerary"];
+
 describe("buildAgentTools", () => {
   const tools = buildAgentTools({ userId: "u1", sessionId: "s1" });
 
-  it("exposes exactly the implemented read tools", () => {
-    expect(Object.keys(tools).sort()).toEqual(["getJourney", "searchJourneys"]);
+  it("exposes every implemented tool to the model", () => {
+    expect(Object.keys(tools).sort()).toEqual([...READ_AND_INLINE, ...CONFIRM].sort());
   });
 
-  it("each tool carries a description and an input schema for the model", () => {
+  it("every tool carries a description and an input schema", () => {
     for (const [name, t] of Object.entries(tools)) {
       expect(typeof t.description, name).toBe("string");
       expect(t.description!.length, name).toBeGreaterThan(20);
       expect(t.inputSchema, name).toBeDefined();
-      expect(typeof t.execute, name).toBe("function");
     }
+  });
+
+  it("read + inline tools get an execute; confirm tools do not (so the loop pauses)", () => {
+    for (const name of READ_AND_INLINE) expect(typeof tools[name]!.execute, name).toBe("function");
+    for (const name of CONFIRM) expect(tools[name]!.execute, name).toBeUndefined();
   });
 
   it("execute delegates to the registry tool's run() and returns its result contract", async () => {
@@ -29,8 +36,7 @@ describe("buildAgentTools", () => {
       .mockResolvedValue({ ok: true, data: { count: 0, hasMore: false, journeys: [] } });
 
     const rebuilt = buildAgentTools({ userId: "u1", sessionId: "s1" });
-    const searchTool = rebuilt.searchJourneys!;
-    const out = await searchTool.execute!({ limit: 3 }, {} as never);
+    const out = await rebuilt.searchJourneys!.execute!({ limit: 3 }, {} as never);
 
     expect(spy).toHaveBeenCalledWith({ limit: 3 }, { userId: "u1", sessionId: "s1" });
     expect(out).toEqual({ ok: true, data: { count: 0, hasMore: false, journeys: [] } });

@@ -22,7 +22,7 @@ interface Props {
 }
 
 export function AssistantWorkspace({ sessionId, sessionTitle, initialMessages, sessions }: Props) {
-  const { messages, sendMessage, status, stop, error } = useChat({
+  const { messages, sendMessage, status, stop, error, addToolResult } = useChat({
     id: sessionId,
     messages: initialMessages,
     transport: new DefaultChatTransport({
@@ -83,7 +83,16 @@ export function AssistantWorkspace({ sessionId, sessionTitle, initialMessages, s
           ) : null}
         </header>
 
-        <AssistantConversation messages={messages} busy={busy} error={error} onReply={setReplyTo} />
+        <AssistantConversation
+          messages={messages}
+          busy={busy}
+          error={error}
+          sessionId={sessionId}
+          onReply={setReplyTo}
+          onToolResolved={({ toolName, toolCallId, output }) =>
+            addToolResult({ tool: toolName, toolCallId, output })
+          }
+        />
 
         <div className="pt-2">
           <AssistantComposer

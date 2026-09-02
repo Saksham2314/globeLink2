@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useTransition } from "react";
 import type { UIMessage } from "ai";
 
 import { formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { assistantSaveJourneyAction } from "@/modules/agent/agent.actions";
+import { forkJourneyAction } from "@/modules/itineraries/itinerary.actions";
 
 import {
   latestToolResult,
@@ -102,14 +106,46 @@ function CanvasCard({ journey }: { journey: CanvasJourneyCard }) {
           <span className="text-ink font-medium">{money(journey.budget)}</span>
         ) : null}
       </div>
+      <CardActions slug={journey.slug} />
+    </div>
+  );
+}
+
+function CardActions({ slug }: { slug: string }) {
+  const [saved, setSaved] = useState<boolean | null>(null);
+  const [saving, startSave] = useTransition();
+
+  function toggleSave() {
+    startSave(async () => {
+      const res = await assistantSaveJourneyAction(slug);
+      if (res.ok) setSaved(res.saved ?? null);
+    });
+  }
+
+  return (
+    <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs font-medium">
       <Link
-        href={`/journeys/${journey.slug}`}
+        href={`/journeys/${slug}`}
         target="_blank"
         rel="noreferrer"
-        className="text-accent mt-2 inline-block text-xs font-medium hover:underline"
+        className="text-accent hover:underline"
       >
-        Open journey →
+        Open →
       </Link>
+      <button
+        type="button"
+        onClick={toggleSave}
+        disabled={saving}
+        className={cn("hover:text-ink transition-colors", saved ? "text-accent" : "text-muted")}
+      >
+        {saving ? "…" : saved === true ? "Saved ✓" : saved === false ? "Save" : "Save"}
+      </button>
+      <form action={forkJourneyAction}>
+        <input type="hidden" name="slug" value={slug} />
+        <button type="submit" className="text-muted hover:text-ink transition-colors">
+          Plan from this
+        </button>
+      </form>
     </div>
   );
 }
@@ -163,14 +199,7 @@ function JourneyPreview({ data }: { data: JourneyToolData }) {
         </div>
       ) : null}
 
-      <Link
-        href={`/journeys/${data.slug}`}
-        target="_blank"
-        rel="noreferrer"
-        className="text-accent inline-block text-xs font-medium hover:underline"
-      >
-        Open full journey →
-      </Link>
+      <CardActions slug={data.slug} />
     </div>
   );
 }

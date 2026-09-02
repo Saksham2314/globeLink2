@@ -168,6 +168,18 @@ export async function getPublicJourneyDetail(
   return toDetailDto(journey);
 }
 
+/** Resolve a slug or id to a published journey's identity + author. Used by the
+ *  mutating tools (saveJourney, createItinerary from a journey, sendMessage to
+ *  a journey's author). Returns null for anything not publicly visible. */
+export async function getPublishedJourneyRef(
+  slugOrId: string,
+): Promise<{ id: string; slug: string; title: string; authorId: string } | null> {
+  return db.journey.findFirst({
+    where: { OR: [{ slug: slugOrId }, { id: slugOrId }], status: "PUBLISHED", deletedAt: null },
+    select: { id: true, slug: true, title: true, authorId: true },
+  });
+}
+
 /** Journeys authored by `authorId`. Drafts included only when the viewer is the author. */
 export async function listByAuthor(
   authorId: string,

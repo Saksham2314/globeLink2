@@ -47,6 +47,16 @@ export async function setUserThemePreference(userId: string, theme: string): Pro
   });
 }
 
+/** Resolve a public handle to a user id, or null. Used by the assistant's
+ *  sendMessage tool to address a recipient. */
+export async function getUserIdByHandle(handle: string): Promise<string | null> {
+  const row = await db.user.findUnique({
+    where: { handle: handle.toLowerCase() },
+    select: { id: true },
+  });
+  return row?.id ?? null;
+}
+
 /** Lightweight identity for the header (avatar + name + verification banner). */
 export async function getSessionUserSummary(userId: string) {
   return db.user.findUnique({

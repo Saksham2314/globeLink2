@@ -1,5 +1,6 @@
 import "server-only";
 
+import { Prisma } from "@prisma/client";
 import type { UIMessage } from "ai";
 
 import { db } from "@/lib/db";
@@ -36,4 +37,35 @@ export async function appendSessionMessages(
     }));
   if (rows.length === 0) return;
   await db.agentMessage.createMany({ data: rows });
+}
+
+/**
+ * Patch a persisted assistant message so a stored tool call reflects its final
+ * state after the user confirmed or cancelled it — otherwise reloading the
+ * session would show the confirmation card as still pending.
+ */
+export async function resolveToolCallInMessage(
+  sessionId: string,
+  messageId: string,
+  toolCallId: string,
+  output: unknown,
+): Promise<void> {
+  const message = await db.agentMessage.findFirst({ where: { id: messageId, sessionId } });
+  if (!message) return;
+
+  const parts = Array.isArray(message.parts) ? (message.parts as Record<string, unknown>[]) : [];
+  let hit = false;
+  const next = parts.map((part) => {
+    if (part && part.toolCallId === toolCallId) {
+      hit = true;
+      return { ...part, state: "output-available", output, errorText: undefined };
+    }
+    return part;
+  });
+  if (!hit) return;
+
+  await db.agentMessage.update({
+    where: { id: messageId },
+    data: { parts: next as unknown as Prisma.InputJsonValue },
+  });
 }

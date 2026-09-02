@@ -6,7 +6,8 @@ import type { UIMessage } from "ai";
 import { Markdown } from "@/components/ui/markdown";
 import { cn } from "@/lib/utils";
 
-import { isTextPart, isToolPart } from "./parts";
+import { ConfirmationCard } from "./confirmation-card";
+import { CONFIRM_TOOL_NAMES, isTextPart, isToolPart, toolNameOf } from "./parts";
 import { quotableText, splitReply, type QuotedReply } from "./reply";
 import { ToolStatusChip } from "./tool-status-chip";
 
@@ -14,10 +15,19 @@ interface Props {
   messages: UIMessage[];
   busy: boolean;
   error?: Error;
+  sessionId: string;
   onReply: (reply: QuotedReply) => void;
+  onToolResolved: (args: { toolName: string; toolCallId: string; output: unknown }) => void;
 }
 
-export function AssistantConversation({ messages, busy, error, onReply }: Props) {
+export function AssistantConversation({
+  messages,
+  busy,
+  error,
+  sessionId,
+  onReply,
+  onToolResolved,
+}: Props) {
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,7 +60,6 @@ export function AssistantConversation({ messages, busy, error, onReply }: Props)
               {parts.map((part, i) => {
                 if (isTextPart(part)) {
                   if (!part.text.trim()) return null;
-
                   if (isUser) {
                     const { quote, text } = splitReply(part.text);
                     return (
@@ -68,7 +77,19 @@ export function AssistantConversation({ messages, busy, error, onReply }: Props)
                     </div>
                   );
                 }
-                if (isToolPart(part)) return <ToolStatusChip key={i} part={part} />;
+                if (isToolPart(part)) {
+                  return CONFIRM_TOOL_NAMES.has(toolNameOf(part)) ? (
+                    <ConfirmationCard
+                      key={i}
+                      part={part}
+                      sessionId={sessionId}
+                      messageId={message.id}
+                      onResolved={onToolResolved}
+                    />
+                  ) : (
+                    <ToolStatusChip key={i} part={part} />
+                  );
+                }
                 return null;
               })}
 

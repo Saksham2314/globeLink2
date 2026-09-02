@@ -55,7 +55,7 @@ export function UserMenu({ name, handle, image }: UserMenuProps) {
       <div
         role="menu"
         className={cn(
-          "border-border bg-surface absolute right-0 mt-2 w-52 origin-top-right rounded-lg border p-1.5 shadow-lg transition",
+          "border-border bg-surface absolute right-0 mt-2 w-60 origin-top-right rounded-lg border p-1.5 shadow-lg transition",
           open ? "visible scale-100 opacity-100" : "invisible scale-95 opacity-0",
         )}
       >

@@ -55,7 +55,7 @@ export function ThemeControl({ variant = "menu" }: { variant?: "menu" | "inline"
       <div
         role="radiogroup"
         aria-label="Theme"
-        className="bg-surface-muted flex gap-0.5 rounded-md p-0.5"
+        className="bg-surface-muted flex w-full gap-0.5 rounded-md p-0.5"
       >
         {OPTIONS.map((opt) => {
           const active = mounted && pref === opt.value;
@@ -68,12 +68,12 @@ export function ThemeControl({ variant = "menu" }: { variant?: "menu" | "inline"
               title={opt.label}
               onClick={() => choose(opt.value)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 rounded px-2 py-1.5 text-xs font-medium transition-colors",
+                "flex min-w-0 flex-1 items-center justify-center gap-1 rounded px-1 py-1.5 text-[11px] font-medium whitespace-nowrap transition-colors",
                 active ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink",
               )}
             >
-              {opt.icon}
-              <span className="hidden sm:inline">{opt.label}</span>
+              <span className="shrink-0">{opt.icon}</span>
+              {opt.label}
             </button>
           );
         })}

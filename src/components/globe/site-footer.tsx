@@ -13,7 +13,7 @@ export function SiteFooter() {
         <p className="text-muted text-xs">
           © {year} GlobeLink · A travel platform built on real journeys.
         </p>
-        <div className="w-full max-w-[13rem] md:w-auto">
+        <div className="w-full max-w-[16rem] md:w-56">
           <ThemeControl variant="inline" />
         </div>
       </Container>

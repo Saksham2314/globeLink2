@@ -42,6 +42,7 @@ model User {
   itineraries    Itinerary[]
   agentSessions  AgentSession[]
   agentToolCalls AgentToolCall[]
+  agentRuns      AgentRun[]
   auditLogs      AuditLog[]
 
   @@map("users")
@@ -512,6 +513,44 @@ model AuditLog {
 }
 
 // ---------------------------------------------------------------------------
+// Agent observability (Phase 9)
+// ---------------------------------------------------------------------------
+
+enum AgentRunOutcome {
+  OK
+  ERROR
+  TIMEOUT
+  RATE_LIMITED
+}
+
+/// One row per assistant turn: the structured observability record described in
+/// docs/ARCHITECTURE.md §5.2. Complements AgentToolCall (per-invocation) and
+/// AuditLog (per data change). `totalTokens` also backs the per-user daily token
+/// budget checked before a turn streams.
+model AgentRun {
+  id           String          @id @default(cuid())
+  sessionId    String?
+  userId       String?
+  model        String
+  inputTokens  Int             @default(0)
+  outputTokens Int             @default(0)
+  totalTokens  Int             @default(0)
+  steps        Int             @default(0)
+  toolNames    String[]        @default([])
+  latencyMs    Int             @default(0)
+  outcome      AgentRunOutcome
+  error        String?
+  createdAt    DateTime        @default(now())
+
+  user    User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  session AgentSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([sessionId, createdAt])
+  @@map("agent_runs")
+}
+
+// ---------------------------------------------------------------------------
 // Agent orchestrator (Phase 7)
 // ---------------------------------------------------------------------------
 
@@ -542,6 +581,7 @@ model AgentSession {
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages  AgentMessage[]
   toolCalls AgentToolCall[]
+  runs      AgentRun[]
 
   @@index([userId, lastActivityAt])
   @@map("agent_sessions")

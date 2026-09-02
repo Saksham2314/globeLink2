@@ -71,6 +71,14 @@ describe("sanitizeConstraints", () => {
     expect(sanitizeConstraints({ ...raw, maxBudget: -5 }).maxBudget).toBeNull();
   });
 
+  it("treats model sentinel strings as null", () => {
+    for (const s of ["<UNKNOWN>", "unknown", "N/A", "none", "not stated", "-"]) {
+      expect(sanitizeConstraints({ ...raw, destination: s }).destination).toBeNull();
+      expect(sanitizeConstraints({ ...raw, region: s }).region).toBeNull();
+    }
+    expect(sanitizeConstraints({ ...raw, destination: "Kyoto" }).destination).toBe("Kyoto");
+  });
+
   it("produces a value that satisfies the strict schema", () => {
     const r = sanitizeConstraints({
       ...raw,

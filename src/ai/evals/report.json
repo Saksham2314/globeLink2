@@ -1,0 +1,152 @@
+{
+  "generatedAt": "2026-09-02T16:38:35.199Z",
+  "model": {
+    "agent": "claude-haiku-4-5-20251001",
+    "extraction": "claude-haiku-4-5-20251001"
+  },
+  "suites": [
+    {
+      "suite": "extraction",
+      "cases": 8,
+      "passed": 7,
+      "passRate": 0.875,
+      "meanScore": 0.875,
+      "durationMs": 11760,
+      "results": [
+        {
+          "name": "10 days in Kyoto in April, love food and temples",
+          "passed": true,
+          "score": 1,
+          "detail": "all asserted fields matched"
+        },
+        {
+          "name": "cheap two week backpacking trip around Vietnam",
+          "passed": true,
+          "score": 1,
+          "detail": "all asserted fields matched"
+        },
+        {
+          "name": "relaxing beach honeymoon in the Maldives, budget 300000 INR",
+          "passed": true,
+          "score": 1,
+          "detail": "all asserted fields matched"
+        },
+        {
+          "name": "5 nights in Lisbon",
+          "passed": true,
+          "score": 1,
+          "detail": "all asserted fields matched"
+        },
+        {
+          "name": "trekking in Nepal for exactly 7 days in October",
+          "passed": true,
+          "score": 1,
+          "detail": "all asserted fields matched"
+        },
+        {
+          "name": "somewhere warm for Christmas",
+          "passed": true,
+          "score": 1,
+          "detail": "all asserted fields matched"
+        },
+        {
+          "name": "wildlife safari in Kenya",
+          "passed": false,
+          "score": 0,
+          "detail": "region: expected \"Kenya\", got \"East Africa\""
+        },
+        {
+          "name": "hi there, what can you do?",
+          "passed": true,
+          "score": 1,
+          "detail": "all asserted fields matched"
+        }
+      ]
+    },
+    {
+      "suite": "tool-selection",
+      "cases": 6,
+      "passed": 6,
+      "passRate": 1,
+      "meanScore": 1,
+      "durationMs": 18468,
+      "results": [
+        {
+          "name": "find me cheap beach trips around Goa",
+          "passed": true,
+          "score": 1,
+          "detail": "expected searchJourneys; called [searchJourneys, searchJourneys, getJourney]"
+        },
+        {
+          "name": "what's the day-by-day plan for the '5 days in Goa' journey?",
+          "passed": true,
+          "score": 1,
+          "detail": "expected getJourney; called [getJourney]"
+        },
+        {
+          "name": "save the journey with slug 5-days-in-goa to my saved list",
+          "passed": true,
+          "score": 1,
+          "detail": "expected saveJourney; called [saveJourney]"
+        },
+        {
+          "name": "turn the Goa journey into a personal itinerary I can edit",
+          "passed": true,
+          "score": 1,
+          "detail": "expected createItinerary; called [searchJourneys, createItinerary]"
+        },
+        {
+          "name": "rename my 'Tokyo' itinerary to 'Tokyo in spring'",
+          "passed": true,
+          "score": 1,
+          "detail": "expected updateItinerary; called [updateItinerary]"
+        },
+        {
+          "name": "message the author of the Goa journey and ask if May is too hot",
+          "passed": true,
+          "score": 1,
+          "detail": "expected sendMessage; called [searchJourneys, sendMessage]"
+        }
+      ]
+    },
+    {
+      "suite": "e2e-llm-judge",
+      "cases": 4,
+      "passed": 3,
+      "passRate": 0.75,
+      "meanScore": 0.85,
+      "durationMs": 14378,
+      "results": [
+        {
+          "name": "discovery",
+          "passed": true,
+          "score": 0.9,
+          "detail": "helpfulness=4 tone=5 — The reply references a specific journey with concrete details (South Goa, seafood shacks, avoids nightlife) and offers actionable next steps, though it would be stronger if it named specific beaches or restaurants rather than just promising to show them later."
+        },
+        {
+          "name": "save-journey",
+          "passed": true,
+          "score": 1,
+          "detail": "helpfulness=5 tone=5 — The assistant correctly identified the journey, called the save tool, and confirmed with a concise sentence matching the rubric requirements."
+        },
+        {
+          "name": "out-of-scope",
+          "passed": true,
+          "score": 0.9,
+          "detail": "helpfulness=4 tone=5 — The assistant clearly states its limitation, redirects helpfully to available services, and maintains a friendly, engaging tone with a follow-up question."
+        },
+        {
+          "name": "message-author",
+          "passed": false,
+          "score": 0.6,
+          "detail": "helpfulness=2 tone=4 — The reply fails to follow the rubric by claiming it will send a message rather than drafting one for confirmation first, and doesn't actually surface any message for the user to review."
+        }
+      ]
+    }
+  ],
+  "overall": {
+    "cases": 18,
+    "passed": 16,
+    "passRate": 0.8888888888888888
+  }
+}

@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { AssistantActivity } from "@/components/globe/assistant-activity";
 import { AvatarUploader } from "@/components/globe/avatar-uploader";
 import { PreferencesForm } from "@/components/globe/preferences-form";
 import { ProfileForm } from "@/components/globe/profile-form";
 import { VerifyEmailBanner } from "@/components/globe/verify-email-banner";
 import { FormMessage } from "@/components/ui/field";
 import { auth } from "@/lib/auth";
+import { getAssistantActivity } from "@/modules/agent/activity.service";
 import { getCurrentUser } from "@/modules/users/user.service";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -23,6 +25,8 @@ export default async function SettingsPage({
 
   const me = await getCurrentUser(session.user.id);
   if (!me) redirect("/login");
+
+  const activity = await getAssistantActivity(session.user.id);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-12 md:px-8">
@@ -69,6 +73,18 @@ export default async function SettingsPage({
             </p>
           </div>
           <PreferencesForm defaultValues={me.preferences} />
+        </section>
+
+        <div className="bg-border h-px" />
+
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-ink text-lg">Assistant activity</h2>
+            <p className="text-muted text-sm">
+              Recent changes the assistant made for you, and the turns it took.
+            </p>
+          </div>
+          <AssistantActivity items={activity} />
         </section>
       </div>
     </div>

@@ -66,6 +66,11 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+
+    /** Sentry DSN. Optional and not secret; the single switch for the whole
+     *  Sentry integration. Unset → the SDK and its build plugin are dropped from
+     *  the bundle entirely (see src/instrumentation*.ts, next.config.ts). */
+    NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
   },
 
   /**
@@ -85,6 +90,7 @@ export const env = createEnv({
     BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
   },
 
   /** Treat empty strings (`FOO=`) as undefined so defaults apply. */
@@ -107,3 +113,6 @@ export const isBlobEnabled = Boolean(env.BLOB_READ_WRITE_TOKEN);
 /** Whether the AI layer can call a model. When false, AI features fall back
  *  (natural-language search → plain text search) and nothing else changes. */
 export const isAiEnabled = Boolean(env.ANTHROPIC_API_KEY);
+
+/** Whether Sentry error tracking is wired up. */
+export const isSentryEnabled = Boolean(env.NEXT_PUBLIC_SENTRY_DSN);

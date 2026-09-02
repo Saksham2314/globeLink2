@@ -7,19 +7,18 @@ thing. An AI assistant sits on top, acting only through validated tools.
 Full technical proposal: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Decisions log: [`docs/adr/`](docs/adr).
 
-## Status — Phase 8 (mutating tools + confirmation)
+## Status — Phase 9 (AI evaluation & observability)
 
-Implemented: Phase 0–7, plus assistant-driven changes. It can now save a
-journey, create or update an itinerary, and send a message — every change
-except the reversible save is shown in a confirmation card (with the exact
-message text for `sendMessage`) and only runs when the user clicks Confirm.
-Mutations go through the existing domain services, keep their ownership checks,
-are capped per session and per tool, and are written to an `AuditLog`. Canvas
-journey cards get Open / Save / Plan-from-this buttons.
+Implemented: Phase 0–8, plus the means to measure and watch the assistant. Every
+turn writes an `AgentRun` row (model, tokens, steps, tools, latency, outcome); a
+per-user tokens/day budget is checked before streaming. `src/ai/evals` holds
+three model-backed suites — extraction, tool-selection, and an end-to-end
+LLM-judge — run by `npm run eval` and by an informational CI workflow that
+commits `report.json`. Sentry is wired but inert until `NEXT_PUBLIC_SENTRY_DSN`
+is set. Settings shows a read-only "Assistant activity" list.
 
-**Not yet implemented:** AI evals + observability (Phase 9), UI polish +
-production hardening (Phase 10). See `docs/ARCHITECTURE.md`; phase decisions are
-in `docs/adr/`.
+**Not yet implemented:** UI polish + production hardening (Phase 10). See
+`docs/ARCHITECTURE.md`; phase decisions are in `docs/adr/`.
 
 ## Tech stack
 
@@ -58,6 +57,7 @@ database it returns `503` with `"db": "down"`; the rest of the app still runs.
 | `npm run lint`                    | ESLint (flat config, `next/core-web-vitals`)        |
 | `npm run typecheck`               | `tsc --noEmit`                                      |
 | `npm run test`                    | Vitest (unit)                                       |
+| `npm run eval`                    | AI eval suites (needs `ANTHROPIC_API_KEY`)          |
 | `npm run format` / `format:check` | Prettier                                            |
 | `npm run db:migrate`              | Create/apply a dev migration                        |
 | `npm run db:migrate:deploy`       | Apply committed migrations (CI / prod)              |

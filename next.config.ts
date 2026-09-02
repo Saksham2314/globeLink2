@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 /**
@@ -36,4 +37,18 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Sentry's build plugin (source-map upload, tunnelling, tree-shaking of debug
+ * code) is only applied when a DSN is configured — otherwise the app builds and
+ * runs exactly as before. `SENTRY_AUTH_TOKEN` (optional) enables source-map
+ * upload; without it the wrapper still works, just without readable stack frames.
+ */
+const sentryEnabled = Boolean(process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN);
+
+export default sentryEnabled
+  ? withSentryConfig(nextConfig, {
+      silent: !process.env.CI,
+      widenClientFileUpload: true,
+      disableLogger: true,
+    })
+  : nextConfig;

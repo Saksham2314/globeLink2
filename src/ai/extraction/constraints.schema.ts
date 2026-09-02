@@ -57,7 +57,9 @@ export const travelConstraintsSchema = z.object({
     .positive()
     .max(100_000_000)
     .nullable()
-    .describe("Total budget ceiling as a plain number in MAJOR currency units (80000, not '80k'). Null if not stated."),
+    .describe(
+      "Total budget ceiling as a plain number in MAJOR currency units (80000, not '80k'). Null if not stated.",
+    ),
   currency: z
     .enum(CURRENCIES)
     .nullable()
@@ -102,9 +104,23 @@ const asInt = (n: number | null, min: number, max: number): number | null => {
   return v >= min && v <= max ? v : null;
 };
 
+/** Sentinel strings small models emit instead of leaving a field null. */
+const NON_VALUES = new Set([
+  "unknown",
+  "<unknown>",
+  "n/a",
+  "na",
+  "none",
+  "null",
+  "not stated",
+  "not specified",
+  "-",
+]);
+
 const asText = (s: string | null, max: number): string | null => {
   const t = s?.trim();
-  return t ? t.slice(0, max) : null;
+  if (!t || NON_VALUES.has(t.toLowerCase())) return null;
+  return t.slice(0, max);
 };
 
 /** Coerce a loose model result into the canonical `TravelConstraints`. Never
@@ -117,7 +133,8 @@ export function sanitizeConstraints(raw: RawExtraction): TravelConstraints {
     region: asText(raw.region, 80),
     durationDays: asInt(raw.durationDays, 1, 365),
     maxBudget: asInt(raw.maxBudget, 1, 100_000_000),
-    currency: currency && CURRENCY_SET.has(currency) ? (currency as TravelConstraints["currency"]) : null,
+    currency:
+      currency && CURRENCY_SET.has(currency) ? (currency as TravelConstraints["currency"]) : null,
     month: month && MONTH_SET.has(month) ? (month as TravelConstraints["month"]) : null,
     styles: [
       ...new Set(raw.styles.map((s) => s.trim().toLowerCase()).filter((s) => STYLE_SET.has(s))),

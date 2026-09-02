@@ -9,6 +9,7 @@ import {
 } from "@/ai/agent/context-window";
 import { streamAgentReply } from "@/ai/agent/orchestrator";
 import { generateSessionTitle } from "@/ai/agent/title";
+import { AGENT_MODEL_ID } from "@/ai/provider";
 import { auth } from "@/lib/auth";
 import { isAiEnabled } from "@/lib/env";
 import { isAppError } from "@/lib/errors";
@@ -18,6 +19,7 @@ import {
   countSessionMessages,
   listSessionMessages,
 } from "@/modules/agent/agent-message.service";
+import { getTokensUsedToday, recordAgentRun } from "@/modules/agent/agent-run.service";
 import { finalizeTurn, getOwnedSession } from "@/modules/agent/agent-session.service";
 import { agentRequestSchema, userMessageText } from "@/modules/agent/agent.schema";
 
@@ -25,10 +27,25 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 // Per-user request rate limit. In-memory: resets on cold start, which is an
-// acceptable ceiling for a soft limit. The tokens/day budget is Phase 9.
+// acceptable ceiling for a soft limit.
 const RATE_WINDOW_MS = 60_000;
 const RATE_MAX = 12;
 const recentHits = new Map<string, number[]>();
+
+/** Per-user cap on assistant tokens over a rolling 24h. Generous — dozens of
+ *  turns — so it only catches runaway/abusive use, not normal sessions. */
+const DAILY_TOKEN_BUDGET = 200_000;
+
+/** Report a stream failure to Sentry when it's configured. Dynamic + guarded so
+ *  `@sentry/nextjs` stays out of this route's bundle when Sentry is off. */
+function captureAgentError(err: unknown, sessionId: string): void {
+  if (!process.env.NEXT_PUBLIC_SENTRY_DSN) return;
+  void import("@sentry/nextjs")
+    .then((Sentry) =>
+      Sentry.captureException(err, { tags: { area: "agent-stream" }, extra: { sessionId } }),
+    )
+    .catch(() => {});
+}
 
 function isRateLimited(userId: string): boolean {
   const now = Date.now();
@@ -71,14 +88,53 @@ export async function POST(req: Request): Promise<Response> {
     return new Response(code === 404 ? "Not found" : "Forbidden", { status: code });
   }
 
+  if ((await getTokensUsedToday(userId)) >= DAILY_TOKEN_BUDGET) {
+    after(() =>
+      recordAgentRun({
+        sessionId,
+        userId,
+        model: AGENT_MODEL_ID,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        steps: 0,
+        toolNames: [],
+        latencyMs: 0,
+        outcome: "RATE_LIMITED",
+        error: "daily token budget exceeded",
+      }),
+    );
+    return Response.json(
+      { error: "You've reached today's assistant usage limit. It resets in 24 hours." },
+      { status: 429 },
+    );
+  }
+
   const history = await listSessionMessages(sessionId);
   const priorCount = history.length;
   const uiMessages = [...history, message as UIMessage];
 
+  const startedAt = Date.now();
   const result = streamAgentReply({
     uiMessages,
     summary: priorSummary,
     ctx: { userId, sessionId },
+    onComplete: (stats) => {
+      // Fires after the response has streamed; the insert is best-effort.
+      void recordAgentRun({
+        sessionId,
+        userId,
+        model: stats.model,
+        inputTokens: stats.inputTokens,
+        outputTokens: stats.outputTokens,
+        totalTokens: stats.totalTokens,
+        steps: stats.steps,
+        toolNames: stats.toolNames,
+        latencyMs: Date.now() - startedAt,
+        outcome: stats.outcome,
+        error: stats.error,
+      });
+    },
   });
 
   return result.toUIMessageStreamResponse({
@@ -115,6 +171,7 @@ export async function POST(req: Request): Promise<Response> {
     },
     onError: (err) => {
       logger.error({ err, sessionId }, "agent stream error");
+      captureAgentError(err, sessionId);
       return "The assistant had trouble responding. Please try again.";
     },
   });

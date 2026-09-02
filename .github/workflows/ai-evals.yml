@@ -1,0 +1,72 @@
+name: AI evals
+
+# Informational, NOT a merge gate. Runs the model-backed eval suites
+# (src/ai/evals) weekly, on PRs that touch the AI layer, and on demand.
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  pull_request:
+    paths:
+      - "src/ai/**"
+      - ".github/workflows/ai-evals.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ai-evals-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    # Never fails the check — the report is for tracking, not gating.
+    continue-on-error: true
+
+    env:
+      SKIP_ENV_VALIDATION: "true"
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run AI evals
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "ANTHROPIC_API_KEY secret is not set — skipping eval run."
+            exit 0
+          fi
+          npm run eval
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-eval-report
+          path: src/ai/evals/report.json
+          if-no-files-found: ignore
+
+      - name: Commit report (scheduled / manual runs only)
+        if: github.event_name != 'pull_request'
+        run: |
+          if [ -n "$(git status --porcelain src/ai/evals/report.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add src/ai/evals/report.json
+            git commit -m "chore(evals): update AI eval report [skip ci]"
+            git push
+          else
+            echo "No change to report.json."
+          fi

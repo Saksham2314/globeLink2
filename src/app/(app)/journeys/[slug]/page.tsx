@@ -76,19 +76,19 @@ export default async function JourneyPage({ params }: Params) {
       ) : null}
 
       <div className="mx-auto max-w-3xl px-6 md:px-8">
-        <header className="pt-10">
+        <header className="pt-8 sm:pt-10">
           <p className="text-muted text-xs font-semibold tracking-[0.16em] uppercase">
             {[journey.destinationName, journey.country].filter(Boolean).join(", ") || "Journey"}
           </p>
-          <h1 className="font-display text-ink mt-3 text-3xl leading-tight md:text-4xl">
+          <h1 className="font-display text-ink mt-3 text-2xl leading-tight sm:text-3xl md:text-4xl">
             {journey.title}
           </h1>
           {journey.summary ? (
-            <p className="text-muted mt-4 text-lg leading-relaxed">{journey.summary}</p>
+            <p className="text-muted mt-4 text-base leading-relaxed sm:text-lg">{journey.summary}</p>
           ) : null}
 
-          <div className="mt-6 flex items-center gap-3">
-            <span className="border-border-strong bg-surface-muted text-ink flex size-9 items-center justify-center overflow-hidden rounded-full border text-sm">
+          <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-4">
+            <span className="border-border-strong bg-surface-muted text-ink flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border text-sm">
               {journey.author.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={journey.author.image} alt="" className="size-full object-cover" />
@@ -109,7 +109,7 @@ export default async function JourneyPage({ params }: Params) {
             </div>
 
             {!isViewerAuthor && journey.status === "PUBLISHED" ? (
-              <div className="ml-auto flex items-center gap-2">
+              <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
                 <StartItineraryButton
                   slug={journey.slug}
                   canFork={Boolean(session?.user)}

@@ -21,7 +21,7 @@ export function ItineraryCard({ itinerary }: { itinerary: ItineraryCardDto }) {
   return (
     <Link
       href={`/itineraries/${itinerary.id}`}
-      className="border-border bg-surface hover:border-border-strong focus-visible:ring-accent focus-visible:ring-offset-bg block rounded-lg border p-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      className="group border-border bg-surface hover:border-border-strong focus-visible:ring-accent focus-visible:ring-offset-bg block rounded-lg border p-4 shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:hover:translate-y-0"
     >
       <div className="flex items-start justify-between gap-3">
         <p className="text-muted text-xs font-semibold tracking-[0.14em] uppercase">{place}</p>
@@ -35,7 +35,9 @@ export function ItineraryCard({ itinerary }: { itinerary: ItineraryCardDto }) {
         </span>
       </div>
 
-      <h3 className="font-display text-ink mt-2 text-lg leading-snug">{itinerary.title}</h3>
+      <h3 className="font-display text-ink group-hover:text-accent mt-2 text-lg leading-snug transition-colors">
+        {itinerary.title}
+      </h3>
 
       <div className="text-muted mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         {dates ? <span>{dates}</span> : null}

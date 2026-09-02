@@ -49,10 +49,11 @@ export const viewport: Viewport = {
 
 /**
  * Resolves the theme and stamps `<html>` BEFORE the body paints, so there is
- * never a flash of the wrong theme. Reads the same localStorage key as
- * src/lib/theme.ts — keep them in sync.
+ * never a flash of the wrong theme. Reads the `gl-theme` cookie first (set for
+ * signed-in users and synced across devices), then localStorage — kept in sync
+ * with src/lib/theme.ts.
  */
-const themeScript = `(function(){try{var p=localStorage.getItem("gl-theme");var dark=p==="dark"||(p!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var r=dark?"dark":"light";var e=document.documentElement;e.dataset.theme=r;e.style.colorScheme=r;}catch(e){}})();`;
+const themeScript = `(function(){try{var m=document.cookie.match(/(?:^|;\\s*)gl-theme=(light|dark|system)\\b/);var p=m?m[1]:localStorage.getItem("gl-theme");var dark=p==="dark"||(p!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var r=dark?"dark":"light";var e=document.documentElement;e.dataset.theme=r;e.style.colorScheme=r;}catch(e){}})();`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

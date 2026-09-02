@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { MessagesNav } from "@/components/globe/messages-nav";
+import { MobileNav } from "@/components/globe/mobile-nav";
 import { UserMenu } from "@/components/globe/user-menu";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -20,34 +21,37 @@ export async function SiteHeader({ nav = [] }: { nav?: NavLink[] }) {
 
   return (
     <header className="border-border bg-bg/80 sticky top-0 z-40 border-b backdrop-blur-md">
-      <Container className="flex h-16 items-center justify-between gap-4">
-        <div className="flex items-center gap-6">
+      <Container className="flex h-16 items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-6">
           <Link
             href="/"
-            className="font-display text-ink text-lg tracking-tight"
+            className="font-display text-ink shrink-0 text-lg tracking-tight"
             aria-label="GlobeLink home"
           >
             Globe<span className="text-accent">Link</span>
           </Link>
-          <Link
-            href="/explore"
-            className="text-muted hover:text-ink text-sm font-medium transition-colors"
-          >
-            Explore
-          </Link>
-          {user ? (
+
+          <nav className="hidden items-center gap-6 md:flex">
             <Link
-              href="/assistant"
+              href="/explore"
               className="text-muted hover:text-ink text-sm font-medium transition-colors"
             >
-              Assistant
+              Explore
             </Link>
-          ) : null}
-          {user ? <MessagesNav initialCount={unread} /> : null}
+            {user ? (
+              <Link
+                href="/assistant"
+                className="text-muted hover:text-ink text-sm font-medium transition-colors"
+              >
+                Assistant
+              </Link>
+            ) : null}
+            {user ? <MessagesNav initialCount={unread} /> : null}
+          </nav>
         </div>
 
         {nav.length > 0 ? (
-          <nav className="hidden items-center gap-8 md:flex">
+          <nav className="hidden items-center gap-8 lg:flex">
             {nav.map((link) => (
               <a
                 key={link.href}
@@ -60,7 +64,7 @@ export async function SiteHeader({ nav = [] }: { nav?: NavLink[] }) {
           </nav>
         ) : null}
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {user ? (
             <>
               <Button asChild size="sm" variant="secondary" className="hidden sm:inline-flex">
@@ -72,15 +76,16 @@ export async function SiteHeader({ nav = [] }: { nav?: NavLink[] }) {
             <>
               <Link
                 href="/login"
-                className="text-muted hover:text-ink text-sm font-medium transition-colors"
+                className="text-muted hover:text-ink hidden text-sm font-medium transition-colors sm:inline"
               >
                 Sign in
               </Link>
-              <Button asChild size="sm">
+              <Button asChild size="sm" className="hidden sm:inline-flex">
                 <Link href="/signup">Get started</Link>
               </Button>
             </>
           )}
+          <MobileNav signedIn={Boolean(user)} unread={unread} className="md:hidden" />
         </div>
       </Container>
     </header>

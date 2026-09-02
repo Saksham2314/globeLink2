@@ -9,7 +9,25 @@ import { firstErrors, type FormState } from "@/lib/forms";
 import { logger } from "@/lib/logger";
 
 import { updatePreferencesSchema, updateProfileSchema } from "./user.schema";
-import { updatePreferences, updateProfile } from "./user.service";
+import { setUserThemePreference, updatePreferences, updateProfile } from "./user.service";
+
+const THEME_VALUES = new Set(["light", "dark", "system"]);
+
+/**
+ * Persist the theme choice so it follows the user across devices. Best-effort:
+ * the client has already applied and cached it locally, so a failure here is
+ * silent. A no-op for anonymous visitors (they rely on localStorage).
+ */
+export async function saveThemePreferenceAction(pref: string): Promise<void> {
+  if (!THEME_VALUES.has(pref)) return;
+  const session = await auth();
+  if (!session?.user?.id) return;
+  try {
+    await setUserThemePreference(session.user.id, pref);
+  } catch (error) {
+    logger.warn({ err: error }, "saveThemePreferenceAction failed");
+  }
+}
 
 export async function updateProfileAction(
   _prev: FormState,

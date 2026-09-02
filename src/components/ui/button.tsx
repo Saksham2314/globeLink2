@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 const buttonVariants = cva(
   [
     "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium",
-    "transition-[background-color,color,border-color,opacity] duration-200 ease-out",
+    "transition-[background-color,color,border-color,opacity,transform] duration-200 ease-out",
+    "active:scale-[0.97] motion-reduce:active:scale-100",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
     "disabled:pointer-events-none disabled:opacity-55",
   ],

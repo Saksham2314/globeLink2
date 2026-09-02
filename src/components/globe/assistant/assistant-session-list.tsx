@@ -21,7 +21,7 @@ interface Props {
 
 export function AssistantSessionList({ sessions, activeId }: Props) {
   return (
-    <aside className="border-border bg-bg hidden min-h-0 flex-col rounded-lg border p-3 md:flex">
+    <aside className="border-border bg-bg flex h-full min-h-0 flex-col rounded-lg border p-3">
       <form action={createSessionAction}>
         <Button type="submit" size="sm" variant="secondary" className="w-full">
           + New chat

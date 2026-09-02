@@ -19,7 +19,7 @@ export function JourneyCard({ journey, viewerCanSave = false }: JourneyCardProps
   ].filter(Boolean);
 
   return (
-    <article className="group border-border bg-surface relative overflow-hidden rounded-lg border shadow-sm transition-shadow duration-200 hover:shadow-md">
+    <article className="group border-border bg-surface hover:border-border-strong relative overflow-hidden rounded-lg border shadow-sm transition-[box-shadow,transform,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-md motion-reduce:hover:translate-y-0">
       {viewerCanSave || journey.isSaved !== undefined ? (
         <SaveButton
           journeyId={journey.id}
@@ -30,14 +30,14 @@ export function JourneyCard({ journey, viewerCanSave = false }: JourneyCardProps
       ) : null}
 
       <Link href={`/journeys/${journey.slug}`} className="block">
-        <div className="bg-surface-muted relative aspect-[4/3]">
+        <div className="bg-surface-muted relative aspect-[4/3] overflow-hidden">
           {journey.coverImageUrl ? (
             <Image
               src={journey.coverImageUrl}
               alt=""
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover"
+              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
             />
           ) : (
             <div className="text-muted flex h-full items-center justify-center text-xs">
@@ -52,7 +52,9 @@ export function JourneyCard({ journey, viewerCanSave = false }: JourneyCardProps
         </div>
 
         <div className="space-y-1.5 p-5">
-          <h3 className="font-display text-ink text-lg leading-snug">{journey.title}</h3>
+          <h3 className="font-display text-ink group-hover:text-accent text-lg leading-snug transition-colors">
+            {journey.title}
+          </h3>
           {meta.length > 0 ? <p className="text-muted text-sm">{meta.join(" · ")}</p> : null}
           {journey.summary ? (
             <p className="text-muted line-clamp-2 pt-1 text-sm">{journey.summary}</p>

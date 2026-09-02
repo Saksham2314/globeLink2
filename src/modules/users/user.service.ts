@@ -29,6 +29,24 @@ export async function getCurrentUser(userId: string): Promise<CurrentUserDto | n
   return user ? toCurrentUser(user) : null;
 }
 
+/** The user's saved theme choice (light/dark/system) or null if unset. Used to
+ *  sync the theme across devices — the browser-local value is the fast path. */
+export async function getUserThemePreference(userId: string): Promise<string | null> {
+  const row = await db.travelPreference.findUnique({
+    where: { userId },
+    select: { theme: true },
+  });
+  return row?.theme ?? null;
+}
+
+export async function setUserThemePreference(userId: string, theme: string): Promise<void> {
+  await db.travelPreference.upsert({
+    where: { userId },
+    update: { theme },
+    create: { userId, theme },
+  });
+}
+
 /** Lightweight identity for the header (avatar + name + verification banner). */
 export async function getSessionUserSummary(userId: string) {
   return db.user.findUnique({

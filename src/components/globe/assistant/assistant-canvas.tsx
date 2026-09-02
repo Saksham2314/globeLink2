@@ -39,7 +39,7 @@ export function AssistantCanvas({ messages }: { messages: UIMessage[] }) {
   }
 
   return (
-    <aside className="border-border bg-bg hidden min-h-0 flex-col overflow-y-auto rounded-lg border p-4 lg:flex">
+    <aside className="border-border bg-bg flex h-full min-h-0 flex-col overflow-y-auto rounded-lg border p-4">
       <p className="text-muted text-xs font-semibold tracking-[0.14em] uppercase">Canvas</p>
       {body ?? (
         <p className="text-muted mt-6 text-sm">

@@ -60,6 +60,10 @@ model TravelPreference {
   interests  String[] @default([])
   homeRegion String?
   dietary    String[] @default([])
+  /// UI theme choice: "light" | "dark" | "system". Null = never set (the
+  /// browser-local value / OS setting applies). Mirrored to a cookie so it
+  /// follows the user across devices.
+  theme      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

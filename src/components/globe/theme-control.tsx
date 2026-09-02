@@ -10,6 +10,7 @@ import {
   applyResolvedTheme,
   type ThemePreference,
 } from "@/lib/theme";
+import { saveThemePreferenceAction } from "@/modules/users/user.actions";
 
 const OPTIONS: { value: ThemePreference; label: string; icon: React.ReactNode }[] = [
   { value: "light", label: "Light", icon: <SunIcon /> },
@@ -47,6 +48,7 @@ export function ThemeControl({ variant = "menu" }: { variant?: "menu" | "inline"
 
     setThemePreference(next);
     setPref(next);
+    void saveThemePreferenceAction(next);
   }
 
   return (

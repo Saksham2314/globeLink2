@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import type { UIMessage } from "ai";
 
 import { refreshSummary } from "@/ai/agent/summary";
@@ -83,27 +84,34 @@ export async function POST(req: Request): Promise<Response> {
   return result.toUIMessageStreamResponse({
     originalMessages: uiMessages,
     onFinish: async ({ messages }) => {
+      // Critical path: persist the transcript and bump activity now.
       try {
         await appendSessionMessages(sessionId, messages.slice(priorCount));
-
-        const patch: { summary?: string; title?: string } = {};
-
-        const total = await countSessionMessages(sessionId);
-        if (shouldRefreshSummary(total)) {
-          const { overflow } = windowMessages(await listSessionMessages(sessionId));
-          const next = await refreshSummary(priorSummary, messagesToPlainText(overflow));
-          if (next && next !== priorSummary) patch.summary = next;
-        }
-
-        if (priorCount === 0) {
-          const title = await generateSessionTitle(userMessageText(message.parts));
-          if (title) patch.title = title;
-        }
-
-        await finalizeTurn(sessionId, patch);
+        await finalizeTurn(sessionId, {});
       } catch (err) {
-        logger.error({ err, sessionId }, "agent onFinish persistence failed");
+        logger.error({ err, sessionId }, "agent transcript persistence failed");
       }
+
+      // Non-critical: title + rolling summary each cost a model call. Run them
+      // after the response has been sent so they never add to perceived latency.
+      after(async () => {
+        try {
+          const patch: { summary?: string; title?: string } = {};
+
+          if (shouldRefreshSummary(await countSessionMessages(sessionId))) {
+            const { overflow } = windowMessages(await listSessionMessages(sessionId));
+            const next = await refreshSummary(priorSummary, messagesToPlainText(overflow));
+            if (next && next !== priorSummary) patch.summary = next;
+          }
+          if (priorCount === 0) {
+            const title = await generateSessionTitle(userMessageText(message.parts));
+            if (title) patch.title = title;
+          }
+          if (patch.summary || patch.title) await finalizeTurn(sessionId, patch);
+        } catch (err) {
+          logger.error({ err, sessionId }, "agent post-turn housekeeping failed");
+        }
+      });
     },
     onError: (err) => {
       logger.error({ err, sessionId }, "agent stream error");

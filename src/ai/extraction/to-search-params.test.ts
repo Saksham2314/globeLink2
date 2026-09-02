@@ -36,7 +36,13 @@ describe("travelConstraintsToSearchParams", () => {
 describe("summarizeConstraints", () => {
   it("reads back the understood constraints", () => {
     const s = summarizeConstraints(
-      c({ destination: "Kyoto", durationDays: 5, maxBudget: 80000, currency: "INR", styles: ["slow"] }),
+      c({
+        destination: "Kyoto",
+        durationDays: 5,
+        maxBudget: 80000,
+        currency: "INR",
+        styles: ["slow"],
+      }),
     );
     expect(s).toContain("Kyoto");
     expect(s).toContain("5 days");

@@ -21,8 +21,9 @@ export default async function VerifyEmailPage() {
       <h1 className="font-display text-ink text-2xl">Confirm your email</h1>
       <p className="text-muted mt-2 text-sm leading-relaxed">
         We&rsquo;ve sent a confirmation link to{" "}
-        <span className="text-ink font-medium">{me.email}</span>. Click it to unlock itineraries, the
-        assistant, messaging and journey publishing. It can take a minute to arrive — check spam too.
+        <span className="text-ink font-medium">{me.email}</span>. Click it to unlock itineraries,
+        the assistant, messaging and journey publishing. It can take a minute to arrive — check spam
+        too.
       </p>
 
       <div className="mt-6">

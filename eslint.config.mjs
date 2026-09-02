@@ -30,11 +30,21 @@ const eslintConfig = [
         "error",
         {
           paths: [
-            { name: "@/lib/db", message: "src/ai must not import the database. Call a service in src/modules." },
-            { name: "@prisma/client", message: "src/ai must not depend on Prisma directly. Use service DTOs/types from src/modules." },
+            {
+              name: "@/lib/db",
+              message: "src/ai must not import the database. Call a service in src/modules.",
+            },
+            {
+              name: "@prisma/client",
+              message:
+                "src/ai must not depend on Prisma directly. Use service DTOs/types from src/modules.",
+            },
           ],
           patterns: [
-            { group: ["@/lib/db", "**/lib/db"], message: "src/ai must not import the database. Call a service in src/modules." },
+            {
+              group: ["@/lib/db", "**/lib/db"],
+              message: "src/ai must not import the database. Call a service in src/modules.",
+            },
           ],
         },
       ],

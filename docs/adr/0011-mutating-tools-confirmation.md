@@ -33,7 +33,7 @@ that part — for `sendMessage` it shows the **exact** message text verbatim.
 **Confirm** calls `confirmMutationAction({ sessionId, messageId, toolCallId,
 toolName, input })`:
 
-1. `auth()` — the click is an authenticated request; that *is* the
+1. `auth()` — the click is an authenticated request; that _is_ the
    authorization.
 2. `getOwnedSession(userId, sessionId)` — the user owns this conversation.
 3. `tool.execute(input, { userId, sessionId })` — which re-validates args,
@@ -56,12 +56,12 @@ ownership checks.
 
 ### 2. Four tools, wrapping existing services
 
-| Tool | Confirm | Service |
-| --- | --- | --- |
-| `saveJourney(slug)` | no — one reversible tap, runs inline in the loop | `saved.toggleSave` |
-| `createItinerary(title, fromJourneySlug? / destination? / days?)` | yes | `createItinerary` / `forkFromJourney` (+ `replacePlan`) |
-| `updateItinerary(itinerary, …changes)` | yes — resolves an id, or the exact/partial title via `listMine` | `updateMeta` / `updateStatus` / `replacePlan` |
-| `sendMessage(body, journeySlug? / recipientHandle?)` | always | `getOrCreateConversation` + `sendMessage` |
+| Tool                                                              | Confirm                                                         | Service                                                 |
+| ----------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------- |
+| `saveJourney(slug)`                                               | no — one reversible tap, runs inline in the loop                | `saved.toggleSave`                                      |
+| `createItinerary(title, fromJourneySlug? / destination? / days?)` | yes                                                             | `createItinerary` / `forkFromJourney` (+ `replacePlan`) |
+| `updateItinerary(itinerary, …changes)`                            | yes — resolves an id, or the exact/partial title via `listMine` | `updateMeta` / `updateStatus` / `replacePlan`           |
+| `sendMessage(body, journeySlug? / recipientHandle?)`              | always                                                          | `getOrCreateConversation` + `sendMessage`               |
 
 `updateMeta` was changed to take `unknown` (it re-parses with its schema, like
 `replacePlan`) so the tool can pass a merged current-plus-patch object without a

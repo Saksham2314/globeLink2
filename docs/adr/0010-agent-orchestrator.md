@@ -29,7 +29,7 @@ SDK produces it** so a session replays and renders verbatim). The Phase 6
 `messageId → AgentMessage` (`SetNull`). `messageId` stays null in Phase 7 —
 tool calls are logged mid-stream, before the assistant message is persisted;
 `sessionId` is populated via `ToolContext.sessionId`. `AgentMessageRole` has
-only USER and ASSISTANT: the SDK models tool calls/results as *parts* inside an
+only USER and ASSISTANT: the SDK models tool calls/results as _parts_ inside an
 assistant message, not separate messages.
 
 ### 2. The orchestrator
@@ -67,11 +67,12 @@ Node runtime, `maxDuration = 60`. Order: `auth()` → 401; AI disabled → 503;
 per-user rate limit (in-memory sliding 60s window, 12/min — resets on cold
 start, acceptable for a soft limit; the tokens/day budget is Phase 9) → 429;
 parse `{ sessionId, message }` (the client transport sends only the new message
-+ session id, the server loads the rest) → 400; `getOwnedSession` → 404/403.
-Then `streamAgentReply` and `result.toUIMessageStreamResponse({ originalMessages,
+
+- session id, the server loads the rest) → 400; `getOwnedSession` → 404/403.
+  Then `streamAgentReply` and `result.toUIMessageStreamResponse({ originalMessages,
 onFinish, onError })`. `onFinish` appends the turn's new messages, refreshes the
-summary when due, and generates the session title on the first turn. `onError`
-returns a calm "the assistant had trouble" string and logs.
+  summary when due, and generates the session title on the first turn. `onError`
+  returns a calm "the assistant had trouble" string and logs.
 
 ### 5. `/assistant` workspace — preview only
 

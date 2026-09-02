@@ -77,7 +77,7 @@ schema); `20260902180000_ai_foundation` is the first tracked `migrate deploy`.
 ### 5. Constraint extraction — tolerant, model-agnostic, cheap
 
 `extractTravelConstraints(text)` runs a `generateObject` call on **Claude Haiku
-4.5** against a *permissive* schema (`rawExtractionSchema`), then
+4.5** against a _permissive_ schema (`rawExtractionSchema`), then
 `sanitizeConstraints` narrows the result to the canonical `TravelConstraints`:
 out-of-vocabulary styles are dropped, bad enums/months nulled, numbers clamped
 or nulled — never fabricated. A strict schema made `generateObject` throw away
@@ -111,8 +111,8 @@ never imports AI.
 Recorded so later phases inherit the reasoning, not just the code. **None of
 this is built in Phase 6.**
 
-- **Itinerary-aware Explore** — personalized ranking of *public* journeys from
-  the user's *private* itinerary context. Seam: `TravelConstraints` +
+- **Itinerary-aware Explore** — personalized ranking of _public_ journeys from
+  the user's _private_ itinerary context. Seam: `TravelConstraints` +
   `fromItinerary`; a `relevantJourneys(constraints, { viewerId })` ranking
   helper distinct from the URL mapper; private data stays owner-scoped and
   server-side.

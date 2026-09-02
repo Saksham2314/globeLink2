@@ -67,7 +67,10 @@ export async function extractTravelConstraints(text: string): Promise<Extraction
       usage: { inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens },
     };
   } catch (err) {
-    logger.warn({ err, ms: Date.now() - started }, "constraint extraction failed; using text search");
+    logger.warn(
+      { err, ms: Date.now() - started },
+      "constraint extraction failed; using text search",
+    );
     return null;
   }
 }

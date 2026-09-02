@@ -3,6 +3,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 
+import { deleteAvatarImage } from "./avatar.storage";
 import { isHandleAvailableShape } from "./handle";
 import {
   toCurrentUser,
@@ -91,6 +92,23 @@ export async function updateProfile(
     include: withPreferences,
   });
   return toCurrentUser(user);
+}
+
+/**
+ * Point the user's avatar at a freshly uploaded Blob URL, discarding any
+ * previous avatar we stored (an external OAuth avatar is left untouched).
+ */
+export async function setUserAvatar(userId: string, url: string): Promise<void> {
+  const prev = await db.user.findUnique({ where: { id: userId }, select: { image: true } });
+  await db.user.update({ where: { id: userId }, data: { image: url } });
+  if (prev?.image && prev.image !== url) await deleteAvatarImage(prev.image);
+}
+
+/** Clear the user's avatar, deleting the stored Blob if we own it. */
+export async function removeUserAvatar(userId: string): Promise<void> {
+  const prev = await db.user.findUnique({ where: { id: userId }, select: { image: true } });
+  await db.user.update({ where: { id: userId }, data: { image: null } });
+  await deleteAvatarImage(prev?.image);
 }
 
 export async function updatePreferences(

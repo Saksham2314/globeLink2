@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { AvatarUploader } from "@/components/globe/avatar-uploader";
 import { PreferencesForm } from "@/components/globe/preferences-form";
 import { ProfileForm } from "@/components/globe/profile-form";
 import { VerifyEmailBanner } from "@/components/globe/verify-email-banner";
@@ -33,6 +34,16 @@ export default async function SettingsPage({
       <div className="mt-8 space-y-8">
         {verified ? <FormMessage message="Your email is verified. Thanks!" /> : null}
         {!me.emailVerified ? <VerifyEmailBanner email={me.email} /> : null}
+
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-ink text-lg">Profile photo</h2>
+            <p className="text-muted text-sm">Shown on your profile, journeys and messages.</p>
+          </div>
+          <AvatarUploader currentImage={me.image} name={me.name} />
+        </section>
+
+        <div className="bg-border h-px" />
 
         <section className="space-y-4">
           <div>

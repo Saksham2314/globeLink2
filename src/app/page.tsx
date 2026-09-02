@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { SiteFooter } from "@/components/globe/site-footer";
 import { SiteHeader } from "@/components/globe/site-header";
 import { Reveal, RevealGroup, RevealItem } from "@/components/motion/reveal";
@@ -27,10 +29,27 @@ const STEPS = [
   },
 ];
 
+// Featured tiles on the landing page. Swap the labels to match whatever photos
+// live in public/landing/. The gradient is a fallback shown until the image loads.
 const DESTINATIONS = [
-  { place: "Manali", country: "India", tone: "from-[#3c5c80] to-[#7091b0]" },
-  { place: "Kyoto", country: "Japan", tone: "from-[#454f60] to-[#7b8a9d]" },
-  { place: "Sintra", country: "Portugal", tone: "from-[#3a5566] to-[#6d909e]" },
+  {
+    place: "Manali",
+    country: "India",
+    image: "/landing/featured-1.jpg",
+    tone: "from-[#3c5c80] to-[#7091b0]",
+  },
+  {
+    place: "Kyoto",
+    country: "Japan",
+    image: "/landing/featured-2.jpg",
+    tone: "from-[#454f60] to-[#7b8a9d]",
+  },
+  {
+    place: "Sintra",
+    country: "Portugal",
+    image: "/landing/featured-3.jpg",
+    tone: "from-[#3a5566] to-[#6d909e]",
+  },
 ];
 
 export default function HomePage() {
@@ -152,22 +171,37 @@ export default function HomePage() {
           <Container className="py-20 md:py-28">
             <Reveal once={false}>
               <div className="flex flex-wrap items-end justify-between gap-3">
-                <h2 className="text-ink text-2xl md:text-3xl">Where this is heading</h2>
-                <p className="text-muted text-sm">Placeholder destinations — no live data yet.</p>
+                <h2 className="text-ink text-2xl md:text-3xl">Places to start looking</h2>
+                <p className="text-muted text-sm">
+                  Each opens Explore with the search already filled in.
+                </p>
               </div>
             </Reveal>
             <RevealGroup className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {DESTINATIONS.map((d) => (
                 <RevealItem key={d.place}>
-                  <article className="group border-border bg-surface overflow-hidden rounded-lg border shadow-sm transition-shadow duration-200 hover:shadow-md">
+                  <a
+                    href={`/explore?q=${encodeURIComponent(d.place)}`}
+                    className="group border-border bg-surface block overflow-hidden rounded-lg border shadow-sm transition-shadow duration-200 hover:shadow-md"
+                  >
                     <div
-                      className={`aspect-[4/3] bg-gradient-to-br ${d.tone} ring-ink/10 ring-1 ring-inset`}
-                    />
+                      className={`relative aspect-[4/3] bg-gradient-to-br ${d.tone} ring-ink/10 ring-1 ring-inset`}
+                    >
+                      <Image
+                        src={d.image}
+                        alt={`${d.place}, ${d.country}`}
+                        fill
+                        sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
+                        className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      />
+                    </div>
                     <div className="p-5">
-                      <h3 className="text-ink text-lg">{d.place}</h3>
+                      <h3 className="text-ink group-hover:text-accent text-lg transition-colors">
+                        {d.place}
+                      </h3>
                       <p className="text-muted text-sm">{d.country}</p>
                     </div>
-                  </article>
+                  </a>
                 </RevealItem>
               ))}
             </RevealGroup>
@@ -182,15 +216,13 @@ export default function HomePage() {
                 The assistant
               </RevealItem>
               <RevealItem>
-                <h2 className="text-ink text-2xl md:text-3xl">
-                  Native to the product, not bolted on.
-                </h2>
+                <h2 className="text-ink text-2xl md:text-3xl">Ask in plain language.</h2>
               </RevealItem>
               <RevealItem className="text-muted text-base leading-relaxed">
-                The GlobeLink assistant works through the same validated tools you do — it can
-                search journeys, open one, and draft an itinerary, but it never touches the database
-                directly and always asks before it changes anything. It arrives in a later phase;
-                the foundation it runs on is being built now.
+                The GlobeLink assistant works through the same validated tools you do — it searches
+                journeys, opens them, and drafts itineraries, and it can save a journey or message
+                an author. It never touches the database directly, and every change waits for your
+                confirmation before it runs.
               </RevealItem>
             </RevealGroup>
           </Container>

@@ -16,6 +16,7 @@ interface UserMenuProps {
 export function UserMenu({ name, handle, image }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -23,7 +24,9 @@ export function UserMenu({ name, handle, image }: UserMenuProps) {
       if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
     }
     function onEsc(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      triggerRef.current?.focus();
     }
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onEsc);
@@ -38,10 +41,12 @@ export function UserMenu({ name, handle, image }: UserMenuProps) {
   return (
     <div ref={ref} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label="Account menu"
         className="border-border-strong bg-surface text-ink hover:bg-surface-muted focus-visible:ring-accent focus-visible:ring-offset-bg flex size-9 items-center justify-center overflow-hidden rounded-full border text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         {image ? (

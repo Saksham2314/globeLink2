@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
+import { headers } from "next/headers";
 
+import { SkipLink } from "@/components/ui/skip-link";
 import { cn } from "@/lib/utils";
 
 import "./globals.css";
@@ -55,17 +57,24 @@ export const viewport: Viewport = {
  */
 const themeScript = `(function(){try{var m=document.cookie.match(/(?:^|;\\s*)gl-theme=(light|dark|system)\\b/);var p=m?m[1]:localStorage.getItem("gl-theme");var dark=p==="dark"||(p!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var r=dark?"dark":"light";var e=document.documentElement;e.dataset.theme=r;e.style.colorScheme=r;}catch(e){}})();`;
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="en" className={cn(inter.variable, fraunces.variable)} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         {/* If JS never runs, scroll-reveal wrappers must not hide their content. */}
         <noscript>
-          <style>{`[data-reveal]{opacity:1 !important;transform:none !important;}`}</style>
+          <style
+            nonce={nonce}
+          >{`[data-reveal]{opacity:1 !important;transform:none !important;}`}</style>
         </noscript>
       </head>
-      <body className="bg-bg text-ink min-h-dvh">{children}</body>
+      <body className="bg-bg text-ink min-h-dvh">
+        <SkipLink />
+        {children}
+      </body>
     </html>
   );
 }

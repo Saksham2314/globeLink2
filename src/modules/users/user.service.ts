@@ -66,6 +66,43 @@ export async function getSessionUserSummary(userId: string) {
   });
 }
 
+/** Public profile handles + last-modified, for the sitemap. */
+export async function listProfileHandlesForSitemap(): Promise<
+  { handle: string; updatedAt: Date }[]
+> {
+  const rows = await db.user.findMany({
+    where: { handle: { not: null } },
+    select: { handle: true, updatedAt: true },
+    take: 5000,
+  });
+  return rows.filter((r): r is { handle: string; updatedAt: Date } => r.handle !== null);
+}
+
+export interface QuickNavTargets {
+  journeys: { slug: string; title: string }[];
+  itineraries: { id: string; title: string }[];
+}
+
+/** A few of the user's most-recent journeys and itineraries, for the ⌘K
+ *  command palette. Titles only — no images, no counts. */
+export async function getQuickNavTargets(userId: string): Promise<QuickNavTargets> {
+  const [journeys, itineraries] = await Promise.all([
+    db.journey.findMany({
+      where: { authorId: userId, deletedAt: null },
+      orderBy: { updatedAt: "desc" },
+      take: 6,
+      select: { slug: true, title: true },
+    }),
+    db.itinerary.findMany({
+      where: { ownerId: userId },
+      orderBy: { updatedAt: "desc" },
+      take: 6,
+      select: { id: true, title: true },
+    }),
+  ]);
+  return { journeys, itineraries };
+}
+
 export async function updateProfile(
   userId: string,
   input: UpdateProfileInput,

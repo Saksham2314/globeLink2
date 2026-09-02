@@ -7,24 +7,24 @@ thing. An AI assistant sits on top, acting only through validated tools.
 Full technical proposal: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Decisions log: [`docs/adr/`](docs/adr).
 
-## Status — Phase 9 (AI evaluation & observability)
+## Status — Phase 10 (polish & hardening) — feature-complete
 
-Implemented: Phase 0–8, plus the means to measure and watch the assistant. Every
-turn writes an `AgentRun` row (model, tokens, steps, tools, latency, outcome); a
-per-user tokens/day budget is checked before streaming. `src/ai/evals` holds
-three model-backed suites — extraction, tool-selection, and an end-to-end
-LLM-judge — run by `npm run eval` and by an informational CI workflow that
-commits `report.json`. Sentry is wired but inert until `NEXT_PUBLIC_SENTRY_DSN`
-is set. Settings shows a read-only "Assistant activity" list.
+All ten phases from `docs/ARCHITECTURE.md` are implemented. Phase 10 added
+loading/empty/error states with skeletons, an accessibility pass (skip link,
+focus traps, focus-return on menus), a Report-Only Content-Security-Policy with
+per-request nonces, a ⌘K command palette, `sitemap.xml` / `robots.txt` /
+journey JSON-LD, and `docs/operations.md`. Transactional email now goes over
+SMTP (no verified domain needed).
 
-**Not yet implemented:** UI polish + production hardening (Phase 10). See
-`docs/ARCHITECTURE.md`; phase decisions are in `docs/adr/`.
+Follow-ups (not blocking): flip CSP from Report-Only to enforcing once reports
+are clean; dynamic OpenGraph images; move `/api/agent` request rate-limiting to
+a shared store if abuse appears. See `docs/adr/` for phase decisions.
 
 ## Tech stack
 
 Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS v4 ·
-Prisma + PostgreSQL (Neon) · Auth.js v5 · Vercel Blob · Zod · pino · Resend ·
-react-markdown · Vitest.
+Prisma + PostgreSQL (Neon) · Auth.js v5 · Vercel Blob · AI SDK v5 (Anthropic) ·
+Zod · pino · nodemailer (SMTP) · Sentry · react-markdown · Vitest.
 
 ## Getting started
 
@@ -89,7 +89,8 @@ docs/             Architecture proposal + ADRs
 
 Target: Vercel (app) + Neon (Postgres). On Vercel set `DATABASE_URL`,
 `DIRECT_URL`, `NEXT_PUBLIC_APP_URL` and `AUTH_SECRET` for both Preview and
-Production; add `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` and `RESEND_API_KEY` to
-enable Google sign-in and real verification emails. The build command
-(`npm run build`) runs `prisma generate`; run `npm run db:migrate:deploy`
-against the production database as a release step.
+Production; add `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` for Google sign-in and
+the `SMTP_*` group + `EMAIL_FROM` for real verification emails (see
+`docs/operations.md`). The build command (`npm run build`) runs
+`prisma generate`; run `npm run db:migrate:deploy` against the production
+database as a release step.

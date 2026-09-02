@@ -38,7 +38,7 @@ export default function HomePage() {
     <>
       <SiteHeader nav={LANDING_NAV} />
 
-      <main>
+      <main id="main-content">
         {/* ---------------------------------------------------------------- Hero */}
         <section className="relative overflow-hidden">
           <div

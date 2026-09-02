@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,6 +11,7 @@ import { StartConversationButton } from "@/components/globe/start-conversation-b
 import { StartItineraryButton } from "@/components/globe/start-itinerary-button";
 import { Markdown } from "@/components/ui/markdown";
 import { auth } from "@/lib/auth";
+import { env } from "@/lib/env";
 import { getPublicJourney, recordView } from "@/modules/journeys/journey.service";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -44,8 +46,35 @@ export default async function JourneyPage({ params }: Params) {
     void recordView(slug);
   }
 
+  const jsonLd =
+    journey.status === "PUBLISHED"
+      ? {
+          "@context": "https://schema.org",
+          "@type": "TouristTrip",
+          name: journey.title,
+          description: journey.summary ?? undefined,
+          image: journey.coverImageUrl ?? undefined,
+          url: `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/journeys/${journey.slug}`,
+          touristType: journey.travelStyle.length ? journey.travelStyle : undefined,
+          ...(journey.destinationName
+            ? { itinerary: { "@type": "Place", name: journey.destinationName } }
+            : {}),
+          ...(journey.author.name
+            ? { author: { "@type": "Person", name: journey.author.name } }
+            : {}),
+          datePublished: journey.publishedAt ?? undefined,
+        }
+      : null;
+
   return (
     <article className="pb-20">
+      {jsonLd ? (
+        <script
+          type="application/ld+json"
+          nonce={(await headers()).get("x-nonce") ?? undefined}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      ) : null}
       {journey.status !== "PUBLISHED" ? (
         <div className="border-border bg-surface-muted border-b">
           <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-6 py-2.5 text-sm md:px-8">
@@ -84,7 +113,9 @@ export default async function JourneyPage({ params }: Params) {
             {journey.title}
           </h1>
           {journey.summary ? (
-            <p className="text-muted mt-4 text-base leading-relaxed sm:text-lg">{journey.summary}</p>
+            <p className="text-muted mt-4 text-base leading-relaxed sm:text-lg">
+              {journey.summary}
+            </p>
           ) : null}
 
           <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-4">

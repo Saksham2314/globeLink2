@@ -9,7 +9,13 @@ import { firstErrors, type FormState } from "@/lib/forms";
 import { logger } from "@/lib/logger";
 
 import { updatePreferencesSchema, updateProfileSchema } from "./user.schema";
-import { setUserThemePreference, updatePreferences, updateProfile } from "./user.service";
+import {
+  getQuickNavTargets,
+  setUserThemePreference,
+  updatePreferences,
+  updateProfile,
+  type QuickNavTargets,
+} from "./user.service";
 
 const THEME_VALUES = new Set(["light", "dark", "system"]);
 
@@ -26,6 +32,18 @@ export async function saveThemePreferenceAction(pref: string): Promise<void> {
     await setUserThemePreference(session.user.id, pref);
   } catch (error) {
     logger.warn({ err: error }, "saveThemePreferenceAction failed");
+  }
+}
+
+/** Recent journeys + itineraries for the ⌘K palette. Empty for anon users. */
+export async function quickNavTargetsAction(): Promise<QuickNavTargets> {
+  const session = await auth();
+  if (!session?.user?.id) return { journeys: [], itineraries: [] };
+  try {
+    return await getQuickNavTargets(session.user.id);
+  } catch (error) {
+    logger.warn({ err: error }, "quickNavTargetsAction failed");
+    return { journeys: [], itineraries: [] };
   }
 }
 

@@ -206,6 +206,16 @@ export async function listByAuthorHandle(
   return user ? listByAuthor(user.id, opts) : [];
 }
 
+/** Published journey slugs + last-modified, for the sitemap. */
+export async function listPublishedForSitemap(): Promise<{ slug: string; updatedAt: Date }[]> {
+  return db.journey.findMany({
+    where: { status: "PUBLISHED", deletedAt: null },
+    select: { slug: true, updatedAt: true },
+    orderBy: { publishedAt: "desc" },
+    take: 5000,
+  });
+}
+
 /** Fire-and-forget view counter — only counts published journeys. */
 export async function recordView(slug: string): Promise<void> {
   await db.journey

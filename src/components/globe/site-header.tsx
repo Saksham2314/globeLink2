@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CommandPaletteTrigger } from "@/components/globe/command-palette-trigger";
 import { MessagesNav } from "@/components/globe/messages-nav";
 import { MobileNav } from "@/components/globe/mobile-nav";
 import { UserMenu } from "@/components/globe/user-menu";
@@ -67,6 +68,7 @@ export async function SiteHeader({ nav = [] }: { nav?: NavLink[] }) {
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {user ? (
             <>
+              <CommandPaletteTrigger className="hidden md:inline-flex" />
               <Button asChild size="sm" variant="secondary" className="hidden sm:inline-flex">
                 <Link href="/journeys/new">Create</Link>
               </Button>

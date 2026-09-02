@@ -1,3 +1,4 @@
+import { CommandPalette } from "@/components/globe/command-palette";
 import { SiteFooter } from "@/components/globe/site-footer";
 import { SiteHeader } from "@/components/globe/site-header";
 import { ThemeSync } from "@/components/globe/theme-sync";
@@ -19,8 +20,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <ThemeSync serverPref={(savedTheme as ThemePreference | null) ?? null} />
       <SiteHeader />
       {summary && !summary.emailVerified ? <UnverifiedStrip /> : null}
-      <main className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1">
+        {children}
+      </main>
       <SiteFooter />
+      {userId ? <CommandPalette /> : null}
     </div>
   );
 }

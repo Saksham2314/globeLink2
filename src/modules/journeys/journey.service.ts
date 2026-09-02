@@ -15,9 +15,7 @@ import {
   journeyContentSchema,
   journeyRouteSchema,
   type CreateJourneyInput,
-  type ItineraryInput,
   type JourneyBasicsInput,
-  type JourneyBudgetInput,
   type JourneyContentInput,
   type JourneyRouteInput,
 } from "./journey.schema";
@@ -223,7 +221,7 @@ export async function updateRoute(
 export async function updateBudget(
   userId: string,
   journeyId: string,
-  input: JourneyBudgetInput,
+  input: unknown,
 ): Promise<JourneyRef> {
   const journey = await loadOwnedJourney(userId, journeyId);
   const d = journeyBudgetSchema.parse(input);
@@ -261,7 +259,7 @@ export async function updateContent(
 export async function replaceItinerary(
   userId: string,
   journeyId: string,
-  input: ItineraryInput,
+  input: unknown,
 ): Promise<JourneyRef> {
   const journey = await loadOwnedJourney(userId, journeyId);
   const { days } = itinerarySchema.parse(input);

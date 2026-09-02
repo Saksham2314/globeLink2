@@ -145,16 +145,17 @@ export async function updateBudgetAction(_prev: FormState, formData: FormData): 
   } catch {
     return { error: "Please sign in again." };
   }
-  const parsed = journeyBudgetSchema.safeParse({
+  const raw = {
     budgetAmount: formData.get("budgetAmount") || undefined,
     budgetCurrency: formData.get("budgetCurrency") || "INR",
     transportModes: formData.getAll("transportModes"),
     travelStyle: formData.getAll("travelStyle"),
-  });
+  };
+  const parsed = journeyBudgetSchema.safeParse(raw);
   if (!parsed.success) return { fieldErrors: firstErrors(parsed.error) };
 
   try {
-    revalidateJourney(await updateBudget(userId, jid(formData), parsed.data));
+    revalidateJourney(await updateBudget(userId, jid(formData), raw));
   } catch (error) {
     return fail(error);
   }
@@ -206,7 +207,7 @@ export async function saveItineraryAction(journeyId: string, payload: unknown): 
   }
 
   try {
-    revalidateJourney(await replaceItinerary(userId, journeyId, parsed.data));
+    revalidateJourney(await replaceItinerary(userId, journeyId, payload));
   } catch (error) {
     return fail(error);
   }

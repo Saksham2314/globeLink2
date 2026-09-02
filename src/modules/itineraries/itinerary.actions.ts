@@ -139,7 +139,7 @@ export async function savePlanAction(itineraryId: string, payload: unknown): Pro
   }
 
   try {
-    await replacePlan(userId, itineraryId, parsed.data);
+    await replacePlan(userId, itineraryId, payload);
   } catch (error) {
     return fail(error);
   }

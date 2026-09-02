@@ -12,7 +12,6 @@ import {
   type CreateItineraryInput,
   type ItineraryMetaInput,
   type ItineraryStatusValue,
-  type PlanInput,
 } from "./itinerary.schema";
 import {
   toCardDto,
@@ -171,7 +170,7 @@ export async function updateStatus(userId: string, id: string, status: Itinerary
 
 /** Replace the whole plan in one transaction — delete + recreate, like the
  *  journey editor. */
-export async function replacePlan(userId: string, id: string, input: PlanInput) {
+export async function replacePlan(userId: string, id: string, input: unknown) {
   await loadOwned(userId, id);
   const { days } = planSchema.parse(input);
 

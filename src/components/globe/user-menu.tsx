@@ -68,6 +68,9 @@ export function UserMenu({ name, handle, image }: UserMenuProps) {
             View profile
           </MenuLink>
         ) : null}
+        <MenuLink href="/messages" onNavigate={() => setOpen(false)}>
+          Messages
+        </MenuLink>
         <MenuLink href="/saved" onNavigate={() => setOpen(false)}>
           Saved journeys
         </MenuLink>

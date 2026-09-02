@@ -7,14 +7,13 @@ thing. An AI assistant sits on top, acting only through validated tools.
 Full technical proposal: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Decisions log: [`docs/adr/`](docs/adr).
 
-## Status — Phase 3 (discovery & search)
+## Status — Phase 4 (messaging)
 
-Implemented: Phase 0–2, plus discovery — an `/explore` page with full-text search
-(`ts_rank` over a generated `tsvector` column), filters (destination, budget,
-duration, style, transport), URL-driven state and keyset "Load more" paging; and
-saving journeys (a heart on every card / journey page, a `/saved` page).
+Implemented: Phase 0–3, plus 1:1 messaging — an `/messages` inbox, a thread view
+with a composer, an unread badge, a "Message" button on journey pages, and
+near-real-time updates by polling an incremental fetch route.
 
-**Not yet implemented:** messaging, personal itineraries, the AI assistant. See
+**Not yet implemented:** personal itineraries, the AI assistant. See
 `docs/ARCHITECTURE.md`; phase decisions are in `docs/adr/`.
 
 ## Tech stack

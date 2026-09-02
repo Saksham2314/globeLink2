@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { JourneyStatRow } from "@/components/globe/journey-stat-row";
 import { JourneyTimeline } from "@/components/globe/journey-timeline";
 import { SaveButton } from "@/components/globe/save-button";
+import { StartConversationButton } from "@/components/globe/start-conversation-button";
 import { Markdown } from "@/components/ui/markdown";
 import { auth } from "@/lib/auth";
 import { getPublicJourney, recordView } from "@/modules/journeys/journey.service";
@@ -36,7 +37,7 @@ export default async function JourneyPage({ params }: Params) {
 
   const result = await getPublicJourney(slug, session?.user?.id);
   if (!result) notFound();
-  const { journey, journeyId, isViewerAuthor, isSaved } = result;
+  const { journey, journeyId, authorId, isViewerAuthor, isSaved } = result;
 
   if (journey.status === "PUBLISHED" && !isViewerAuthor) {
     void recordView(slug);
@@ -107,7 +108,13 @@ export default async function JourneyPage({ params }: Params) {
             </div>
 
             {!isViewerAuthor && journey.status === "PUBLISHED" ? (
-              <div className="ml-auto">
+              <div className="ml-auto flex items-center gap-2">
+                <StartConversationButton
+                  authorId={authorId}
+                  journeyId={journeyId}
+                  canMessage={Boolean(session?.user)}
+                  returnTo={`/journeys/${journey.slug}`}
+                />
                 <SaveButton
                   journeyId={journeyId}
                   initialSaved={isSaved}

@@ -124,6 +124,7 @@ export async function getPublicJourney(
 ): Promise<{
   journey: JourneyDetailDto;
   journeyId: string;
+  authorId: string;
   isViewerAuthor: boolean;
   isSaved: boolean;
 } | null> {
@@ -141,7 +142,13 @@ export async function getPublicJourney(
       )
     : false;
 
-  return { journey: toDetailDto(journey), journeyId: journey.id, isViewerAuthor, isSaved };
+  return {
+    journey: toDetailDto(journey),
+    journeyId: journey.id,
+    authorId: journey.authorId,
+    isViewerAuthor,
+    isSaved,
+  };
 }
 
 /** Journeys authored by `authorId`. Drafts included only when the viewer is the author. */

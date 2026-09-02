@@ -1,9 +1,11 @@
 import Link from "next/link";
 
+import { MessagesNav } from "@/components/globe/messages-nav";
 import { UserMenu } from "@/components/globe/user-menu";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { auth } from "@/lib/auth";
+import { getTotalUnread } from "@/modules/messaging/messaging.service";
 import { getSessionUserSummary } from "@/modules/users/user.service";
 
 interface NavLink {
@@ -14,6 +16,7 @@ interface NavLink {
 export async function SiteHeader({ nav = [] }: { nav?: NavLink[] }) {
   const session = await auth();
   const user = session?.user?.id ? await getSessionUserSummary(session.user.id) : null;
+  const unread = user ? await getTotalUnread(user.id) : 0;
 
   return (
     <header className="border-border bg-bg/80 sticky top-0 z-40 border-b backdrop-blur-md">
@@ -32,6 +35,7 @@ export async function SiteHeader({ nav = [] }: { nav?: NavLink[] }) {
           >
             Explore
           </Link>
+          {user ? <MessagesNav initialCount={unread} /> : null}
         </div>
 
         {nav.length > 0 ? (

@@ -1,20 +1,29 @@
 import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 
-import { authConfig } from "@/lib/auth.config";
+import { authConfig, requiresAuth } from "@/lib/auth.config";
 import { buildContentSecurityPolicy } from "@/lib/csp";
 
 /**
- * Route protection runs in middleware using the Edge-safe config only. The
- * `authorized` callback in authConfig decides who may proceed; Auth.js handles
- * the redirect to the sign-in page.
+ * Middleware does two things on the Edge:
  *
- * This wrapper also attaches a per-request CSP nonce and a **Report-Only**
- * Content-Security-Policy header (see src/lib/csp.ts).
+ * 1. Route protection — redirect signed-out users away from protected routes to
+ *    `/login?next=<path>`. (Supplying a handler function to `auth()` means the
+ *    `authorized` callback is no longer auto-applied, so the check runs here.)
+ * 2. A per-request CSP nonce + a **Report-Only** Content-Security-Policy header
+ *    (see src/lib/csp.ts).
  */
 const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
+  const { nextUrl } = req;
+
+  if (requiresAuth(nextUrl.pathname) && !req.auth?.user) {
+    const signIn = new URL("/login", nextUrl.origin);
+    signIn.searchParams.set("next", nextUrl.pathname + nextUrl.search);
+    return NextResponse.redirect(signIn);
+  }
+
   const nonce = crypto.randomUUID().replace(/-/g, "");
   const csp = buildContentSecurityPolicy(nonce, process.env.NODE_ENV !== "production");
 

@@ -20,7 +20,7 @@ const PROTECTED_PREFIXES = [
 ];
 
 /** Also protected: creating/editing a journey. `/journeys/<slug>` (view) is public. */
-function requiresAuth(pathname: string): boolean {
+export function requiresAuth(pathname: string): boolean {
   if (PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
   return pathname.startsWith("/journeys/") && pathname.endsWith("/edit");
 }

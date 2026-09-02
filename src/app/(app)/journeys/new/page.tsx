@@ -3,12 +3,14 @@ import { redirect } from "next/navigation";
 
 import { NewJourneyForm } from "@/components/globe/journey-editor/new-journey-form";
 import { auth } from "@/lib/auth";
+import { requireVerifiedUser } from "@/lib/require-verified";
 
 export const metadata: Metadata = { title: "New journey" };
 
 export default async function NewJourneyPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?next=/journeys/new");
+  await requireVerifiedUser("/journeys/new");
 
   return (
     <div className="mx-auto w-full max-w-lg px-6 py-14 md:px-8">

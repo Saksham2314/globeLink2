@@ -6,6 +6,7 @@ import { ItineraryCard } from "@/components/globe/itinerary-card";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { auth } from "@/lib/auth";
+import { requireVerifiedUser } from "@/lib/require-verified";
 import { listMine } from "@/modules/itineraries/itinerary.service";
 
 export const metadata: Metadata = { title: "Itineraries" };
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: "Itineraries" };
 export default async function ItinerariesPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?next=/itineraries");
+  await requireVerifiedUser("/itineraries");
 
   const { items } = await listMine(session.user.id);
 

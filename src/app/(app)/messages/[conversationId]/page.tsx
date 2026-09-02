@@ -5,6 +5,7 @@ import { ConversationList } from "@/components/globe/conversation-list";
 import { MessageThread } from "@/components/globe/message-thread";
 import { Container } from "@/components/ui/container";
 import { auth } from "@/lib/auth";
+import { requireVerifiedUser } from "@/lib/require-verified";
 import { isAppError } from "@/lib/errors";
 import {
   getConversationHeader,
@@ -20,6 +21,7 @@ export default async function ConversationPage({ params }: Params) {
   const { conversationId } = await params;
   const session = await auth();
   if (!session?.user?.id) redirect(`/login?next=/messages/${conversationId}`);
+  await requireVerifiedUser(`/messages/${conversationId}`);
   const userId = session.user.id;
 
   let header;

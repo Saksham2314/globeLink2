@@ -17,7 +17,9 @@ import { consumeEmailVerificationToken, createEmailVerificationToken } from "./v
  *
  * Throws `AppError.conflict` if the email is already registered.
  */
-export async function registerUser(input: SignUpInput): Promise<{ id: string; email: string }> {
+export async function registerUser(
+  input: SignUpInput,
+): Promise<{ id: string; email: string; emailSent: boolean }> {
   const { name, email, password } = signUpSchema.parse(input);
 
   const existing = await db.user.findUnique({ where: { email }, select: { id: true } });
@@ -41,31 +43,38 @@ export async function registerUser(input: SignUpInput): Promise<{ id: string; em
     select: { id: true, email: true, name: true },
   });
 
-  await sendVerificationEmail(user.email, user.name);
-  logger.info({ userId: user.id }, "user registered");
+  const { ok: emailSent } = await sendVerificationEmail(user.email, user.name);
+  logger.info({ userId: user.id, emailSent }, "user registered");
 
-  return { id: user.id, email: user.email };
+  return { id: user.id, email: user.email, emailSent };
 }
 
-/** Issue a fresh verification token and email it. Safe to call repeatedly. */
-export async function sendVerificationEmail(email: string, name?: string | null): Promise<void> {
+/** Issue a fresh verification token and email it. Safe to call repeatedly.
+ *  Returns whether the message actually went out (the sender may reject a
+ *  recipient while no domain is verified — see src/lib/email.ts). */
+export async function sendVerificationEmail(
+  email: string,
+  name?: string | null,
+): Promise<{ ok: boolean }> {
   const token = await createEmailVerificationToken(email);
   const { subject, html, text } = buildVerificationEmail(token, name);
-  await sendEmail({ to: email, subject, html, text });
+  return sendEmail({ to: email, subject, html, text });
 }
 
 /**
- * Resend verification for an as-yet-unverified account. Never reveals whether
- * the address exists or its verification state.
+ * Resend verification for an as-yet-unverified account. Returns whether an
+ * email actually went out (false for a missing / already-verified account, or a
+ * rejected send) — the caller keeps the response vague either way.
  */
-export async function resendVerificationEmail(email: string): Promise<void> {
+export async function resendVerificationEmail(email: string): Promise<boolean> {
   const user = await db.user.findUnique({
     where: { email },
     select: { email: true, name: true, emailVerified: true },
   });
-  if (user && !user.emailVerified) {
-    await sendVerificationEmail(user.email, user.name);
-  }
+  if (!user || user.emailVerified) return false;
+
+  const { ok } = await sendVerificationEmail(user.email, user.name);
+  return ok;
 }
 
 /**

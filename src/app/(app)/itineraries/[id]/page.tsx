@@ -7,6 +7,7 @@ import { ItineraryMetaForm } from "@/components/globe/itinerary-meta-form";
 import { PlanEditor } from "@/components/globe/plan-editor";
 import { Container } from "@/components/ui/container";
 import { auth } from "@/lib/auth";
+import { requireVerifiedUser } from "@/lib/require-verified";
 import type { ItineraryEditDto } from "@/modules/itineraries/itinerary.mappers";
 import { getForEdit } from "@/modules/itineraries/itinerary.service";
 
@@ -36,6 +37,7 @@ export default async function ItineraryPage({ params }: Params) {
   const session = await auth();
   const { id } = await params;
   if (!session?.user?.id) redirect(`/login?next=/itineraries/${id}`);
+  await requireVerifiedUser(`/itineraries/${id}`);
 
   const itinerary = await load(session.user.id, id);
   const place =

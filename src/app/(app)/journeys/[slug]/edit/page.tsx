@@ -10,6 +10,7 @@ import { JourneyPublishBar } from "@/components/globe/journey-editor/journey-pub
 import { JourneyRouteForm } from "@/components/globe/journey-editor/journey-route-form";
 import { ItineraryEditor } from "@/components/globe/journey-editor/itinerary-editor";
 import { auth } from "@/lib/auth";
+import { requireVerifiedUser } from "@/lib/require-verified";
 import { isAppError } from "@/lib/errors";
 import { publishRequirements } from "@/modules/journeys/journey.schema";
 import { getForEdit } from "@/modules/journeys/journey.service";
@@ -22,6 +23,7 @@ export default async function EditJourneyPage({ params }: Params) {
   const { slug } = await params;
   const session = await auth();
   if (!session?.user?.id) redirect(`/login?next=/journeys/${slug}/edit`);
+  await requireVerifiedUser(`/journeys/${slug}/edit`);
 
   let journey;
   try {

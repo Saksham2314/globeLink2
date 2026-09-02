@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { PaginatedJourneyGrid } from "@/components/globe/paginated-journey-grid";
 import { Container } from "@/components/ui/container";
 import { auth } from "@/lib/auth";
+import { requireVerifiedUser } from "@/lib/require-verified";
 import { loadMoreSavedAction } from "@/modules/saved/saved.actions";
 import { listSaved } from "@/modules/saved/saved.service";
 
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: "Saved journeys" };
 export default async function SavedPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?next=/saved");
+  await requireVerifiedUser("/saved");
 
   const result = await listSaved(session.user.id);
 

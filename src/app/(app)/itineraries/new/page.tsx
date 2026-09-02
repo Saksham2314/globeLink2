@@ -3,12 +3,14 @@ import { redirect } from "next/navigation";
 
 import { NewItineraryForm } from "@/components/globe/new-itinerary-form";
 import { auth } from "@/lib/auth";
+import { requireVerifiedUser } from "@/lib/require-verified";
 
 export const metadata: Metadata = { title: "New itinerary" };
 
 export default async function NewItineraryPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?next=/itineraries/new");
+  await requireVerifiedUser("/itineraries/new");
 
   return (
     <div className="mx-auto w-full max-w-lg px-6 py-14 md:px-8">

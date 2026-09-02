@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { AssistantUnavailable } from "@/components/globe/assistant/assistant-unavailable";
 import { AssistantWorkspace } from "@/components/globe/assistant/assistant-workspace";
 import { auth } from "@/lib/auth";
+import { requireVerifiedUser } from "@/lib/require-verified";
 import { isAiEnabled } from "@/lib/env";
 import { listSessionMessages } from "@/modules/agent/agent-message.service";
 import { getOwnedSession, listSessions } from "@/modules/agent/agent-session.service";
@@ -26,6 +27,7 @@ export default async function AssistantSessionPage({ params }: Params) {
   const { sessionId } = await params;
   const session = await auth();
   if (!session?.user?.id) redirect(`/login?next=/assistant/${sessionId}`);
+  await requireVerifiedUser(`/assistant/${sessionId}`);
   if (!isAiEnabled) return <AssistantUnavailable />;
 
   let current;

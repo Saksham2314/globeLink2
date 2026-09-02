@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { ConversationList } from "@/components/globe/conversation-list";
 import { Container } from "@/components/ui/container";
 import { auth } from "@/lib/auth";
+import { requireVerifiedUser } from "@/lib/require-verified";
 import { listConversations } from "@/modules/messaging/messaging.service";
 
 export const metadata: Metadata = { title: "Messages" };
@@ -12,6 +13,7 @@ export const metadata: Metadata = { title: "Messages" };
 export default async function MessagesPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?next=/messages");
+  await requireVerifiedUser("/messages");
 
   const { items } = await listConversations(session.user.id);
 

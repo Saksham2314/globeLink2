@@ -61,13 +61,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     /**
      * Adapter-created accounts (OAuth) arrive without a handle or preferences
      * row — the credentials path sets both in registerUser. Backfill here.
+     * The only OAuth provider is Google, which verifies email addresses, so the
+     * account is considered verified from the start.
      */
     async createUser({ user }) {
       if (!user.id) return;
       const handle = await generateUniqueHandle(user.name || user.email || "traveller");
+      const verifiedAt = (user as { emailVerified?: Date | null }).emailVerified ?? new Date();
       await db.user.update({
         where: { id: user.id },
-        data: { handle, preferences: { create: {} } },
+        data: {
+          handle,
+          emailVerified: verifiedAt,
+          preferences: { create: {} },
+        },
       });
       logger.info({ userId: user.id }, "oauth user provisioned");
     },

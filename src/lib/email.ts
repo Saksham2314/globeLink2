@@ -1,9 +1,19 @@
-import { Resend } from "resend";
+import "server-only";
+
+import nodemailer, { type Transporter } from "nodemailer";
 
 import { env, isEmailEnabled } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
-const resend = isEmailEnabled ? new Resend(env.RESEND_API_KEY) : null;
+/**
+ * Transactional email over SMTP (nodemailer). Built for Gmail SMTP with an
+ * app password, which needs no verified sending domain — see docs/operations.md.
+ *
+ * Best-effort: `sendEmail` never throws. When SMTP isn't configured, the message
+ * (verification link included) is logged to the server console so email-gated
+ * flows still work in local development. Callers such as sign-up must not fail
+ * just because the email didn't go out — the user can request a fresh link.
+ */
 
 interface SendEmailInput {
   to: string;
@@ -12,37 +22,36 @@ interface SendEmailInput {
   text: string;
 }
 
-/**
- * Send a transactional email. Best-effort: never throws.
- *
- * - No RESEND_API_KEY  → the message (link included) is logged to the server
- *   console, so email-dependent flows still work in local development.
- * - Send fails (e.g. Resend's shared sender rejecting a non-owner recipient
- *   before a domain is verified) → logged and reported via the return value.
- *
- * Callers such as sign-up must not fail just because the email didn't go out —
- * the user can request a fresh link later.
- */
+let transporter: Transporter | null = null;
+
+function getTransport(): Transporter | null {
+  if (!isEmailEnabled) return null;
+  transporter ??= nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_PORT === 465, // 465 = implicit TLS; 587 = STARTTLS
+    auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+  });
+  return transporter;
+}
+
 export async function sendEmail({
   to,
   subject,
   html,
   text,
 }: SendEmailInput): Promise<{ ok: boolean }> {
-  if (!resend) {
-    logger.warn({ to, subject, text }, "email not sent (RESEND_API_KEY unset) — logged instead");
+  const transport = getTransport();
+  if (!transport) {
+    logger.warn({ to, subject, text }, "email not sent (SMTP not configured) — logged instead");
     return { ok: false };
   }
 
   try {
-    const { error } = await resend.emails.send({ from: env.EMAIL_FROM, to, subject, html, text });
-    if (error) {
-      logger.error({ err: error, to, subject }, "email send rejected by provider");
-      return { ok: false };
-    }
+    await transport.sendMail({ from: env.EMAIL_FROM, to, subject, text, html });
     return { ok: true };
   } catch (error) {
-    logger.error({ err: error, to, subject }, "email send threw");
+    logger.error({ err: error, to, subject }, "email send failed");
     return { ok: false };
   }
 }

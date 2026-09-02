@@ -38,14 +38,19 @@ export const env = createEnv({
     AUTH_GOOGLE_ID: z.string().optional(),
     AUTH_GOOGLE_SECRET: z.string().optional(),
 
-    // ---- Email (Resend) -------------------------------------------------
-    /** Optional: when absent, verification emails are logged to the server
-     *  console instead of being sent, so the flow still works locally. */
-    RESEND_API_KEY: z.string().optional(),
-    /** From-address for transactional email. Resend's shared sender works for
-     *  testing but only delivers to your own Resend account address until a
-     *  custom domain is verified. */
-    EMAIL_FROM: z.string().default("GlobeLink <onboarding@resend.dev>"),
+    // ---- Email (SMTP) -------------------------------------------------
+    /** SMTP transport for transactional email (nodemailer). All four are needed
+     *  to send; with any missing, the message — verification link included — is
+     *  logged to the server console instead, so local dev still works.
+     *  For Gmail: host smtp.gmail.com, port 465, user = the Gmail address,
+     *  pass = a Google App Password. No verified domain required. */
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.coerce.number().int().positive().default(465),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    /** From-address for transactional email, e.g. "GlobeLink <you@gmail.com>".
+     *  With Gmail SMTP this must be the authenticated address (or an alias). */
+    EMAIL_FROM: z.string().default("GlobeLink <no-reply@globelink.local>"),
 
     // ---- Blob storage (Vercel Blob) ----------------------------------
     /** Read/write token for the Vercel Blob store. Auto-provisioned by
@@ -85,7 +90,10 @@ export const env = createEnv({
     AUTH_SECRET: process.env.AUTH_SECRET,
     AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
     AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
-    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    SMTP_HOST: process.env.SMTP_HOST,
+    SMTP_PORT: process.env.SMTP_PORT,
+    SMTP_USER: process.env.SMTP_USER,
+    SMTP_PASS: process.env.SMTP_PASS,
     EMAIL_FROM: process.env.EMAIL_FROM,
     BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
@@ -104,8 +112,9 @@ export const env = createEnv({
  *  provider and to show/hide the "Continue with Google" button. */
 export const isGoogleAuthEnabled = Boolean(env.AUTH_GOOGLE_ID && env.AUTH_GOOGLE_SECRET);
 
-/** Whether real transactional email is configured. */
-export const isEmailEnabled = Boolean(env.RESEND_API_KEY);
+/** Whether a real SMTP transport is configured. When false, emails are logged
+ *  to the server console instead of sent. */
+export const isEmailEnabled = Boolean(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS);
 
 /** Whether Blob image storage is configured. */
 export const isBlobEnabled = Boolean(env.BLOB_READ_WRITE_TOKEN);

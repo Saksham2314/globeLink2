@@ -8,11 +8,21 @@
  * Palette direction: a cool, atmospheric travel aesthetic — blue-grey paper,
  * deep navy ink, one muted deep-blue accent. Desaturated on purpose so it
  * reads as premium and editorial rather than as a bright SaaS dashboard.
- * Light and dark are both defined here; a user-facing theme toggle is a
- * later phase.
+ *
+ * Theming:
+ *   :root                      → light (the default)
+ *   :root[data-theme="dark"]   → dark, chosen explicitly (the no-flash script
+ *                                 in the root layout sets this before paint)
+ *   @media dark + :not([data-theme])
+ *                              → dark for visitors following their OS with JS
+ *                                 disabled (JS users always get an explicit
+ *                                 data-theme, so this block never double-fires)
+ * The two dark blocks are intentionally identical — keep them in sync.
  * ==========================================================================*/
 
 :root {
+  color-scheme: light;
+
   /* -- Surfaces ------------------------------------------------------------ */
   --gl-bg: #f5f7f9; /* app background — cool off-white with a faint blue-grey cast */
   --gl-surface: #ffffff; /* cards, sheets */
@@ -31,6 +41,9 @@
   --gl-accent-hover: #26405d;
   --gl-accent-contrast: #ffffff; /* text/icons on accent fills */
   --gl-accent-soft: #e6ecf3; /* tinted backgrounds, atmospheric wash */
+
+  /* -- Focus ring -------------------------------------------------- */
+  --gl-ring: #2f4d70;
 
   /* -- Feedback --------------------------------------------------- */
   --gl-danger: #b3261e; /* validation + destructive */
@@ -56,22 +69,59 @@
   --gl-font-display: var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
 }
 
+/* --- Dark: explicit choice -------------------------------------------------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --gl-bg: #0d1219; /* deep navy-charcoal */
+  --gl-surface: #151d29; /* cards — a step up from the page */
+  --gl-surface-muted: #1e2836; /* subtle fills, hover states */
+
+  --gl-border: #29333f;
+  --gl-border-strong: #3a4757;
+
+  --gl-ink: #e9edf3; /* cool off-white */
+  --gl-muted: #98a3b3;
+
+  --gl-accent: #7ba4cc; /* soft, luminous blue that holds up on a dark ground */
+  --gl-accent-hover: #96b8db;
+  --gl-accent-contrast: #0d1219;
+  --gl-accent-soft: #1a2634;
+
+  --gl-ring: #7ba4cc;
+
+  --gl-danger: #f2857c;
+  --gl-danger-soft: #2b1b1a;
+  --gl-success: #6fcaa2;
+  --gl-heart: #ff6369;
+  --gl-heart-soft: #2c1719;
+
+  --gl-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --gl-shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+  --gl-shadow-lg: 0 20px 44px -14px rgba(0, 0, 0, 0.62);
+}
+
+/* --- Dark: OS default for no-JS visitors (mirror of the block above) ------- */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --gl-bg: #0d1219; /* deep navy-charcoal */
-    --gl-surface: #141b25;
-    --gl-surface-muted: #1c2530;
+  :root:not([data-theme]) {
+    color-scheme: dark;
 
-    --gl-border: #263140;
-    --gl-border-strong: #354354;
+    --gl-bg: #0d1219;
+    --gl-surface: #151d29;
+    --gl-surface-muted: #1e2836;
 
-    --gl-ink: #e8ecf2; /* cool off-white */
-    --gl-muted: #97a2b2;
+    --gl-border: #29333f;
+    --gl-border-strong: #3a4757;
 
-    --gl-accent: #7ba4cc; /* soft, luminous blue that holds up on a dark ground */
-    --gl-accent-hover: #93b6d9;
+    --gl-ink: #e9edf3;
+    --gl-muted: #98a3b3;
+
+    --gl-accent: #7ba4cc;
+    --gl-accent-hover: #96b8db;
     --gl-accent-contrast: #0d1219;
-    --gl-accent-soft: #172231;
+    --gl-accent-soft: #1a2634;
+
+    --gl-ring: #7ba4cc;
 
     --gl-danger: #f2857c;
     --gl-danger-soft: #2b1b1a;

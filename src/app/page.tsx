@@ -161,7 +161,7 @@ export default function HomePage() {
                 <RevealItem key={d.place}>
                   <article className="group border-border bg-surface overflow-hidden rounded-lg border shadow-sm transition-shadow duration-200 hover:shadow-md">
                     <div
-                      className={`aspect-[4/3] bg-gradient-to-br ${d.tone} ring-1 ring-black/5 ring-inset`}
+                      className={`aspect-[4/3] bg-gradient-to-br ${d.tone} ring-ink/10 ring-1 ring-inset`}
                     />
                     <div className="p-5">
                       <h3 className="text-ink text-lg">{d.place}</h3>

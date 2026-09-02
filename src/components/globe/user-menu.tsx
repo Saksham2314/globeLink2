@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { ThemeControl } from "@/components/globe/theme-control";
 import { signOutAction } from "@/modules/auth/auth.actions";
 import { cn } from "@/lib/utils";
 
@@ -77,6 +78,11 @@ export function UserMenu({ name, handle, image }: UserMenuProps) {
         <MenuLink href="/settings" onNavigate={() => setOpen(false)}>
           Settings
         </MenuLink>
+
+        <div className="bg-border my-1 h-px" />
+        <ThemeControl />
+        <div className="bg-border my-1 h-px" />
+
         <form action={signOutAction}>
           <button
             type="submit"

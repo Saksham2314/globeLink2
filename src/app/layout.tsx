@@ -47,10 +47,18 @@ export const viewport: Viewport = {
   ],
 };
 
+/**
+ * Resolves the theme and stamps `<html>` BEFORE the body paints, so there is
+ * never a flash of the wrong theme. Reads the same localStorage key as
+ * src/lib/theme.ts — keep them in sync.
+ */
+const themeScript = `(function(){try{var p=localStorage.getItem("gl-theme");var dark=p==="dark"||(p!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var r=dark?"dark":"light";var e=document.documentElement;e.dataset.theme=r;e.style.colorScheme=r;}catch(e){}})();`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={cn(inter.variable, fraunces.variable)} suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         {/* If JS never runs, scroll-reveal wrappers must not hide their content. */}
         <noscript>
           <style>{`[data-reveal]{opacity:1 !important;transform:none !important;}`}</style>

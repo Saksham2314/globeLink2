@@ -25,6 +25,7 @@
   --color-accent-hover: var(--gl-accent-hover);
   --color-accent-contrast: var(--gl-accent-contrast);
   --color-accent-soft: var(--gl-accent-soft);
+  --color-ring: var(--gl-ring);
 
   --color-danger: var(--gl-danger);
   --color-danger-soft: var(--gl-danger-soft);
@@ -80,9 +81,23 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-ring);
     outline-offset: 2px;
     border-radius: 2px;
+  }
+}
+
+/* Brief cross-fade of colours only while the theme toggle is switching. The
+   class is added for ~250ms by the theme control, so first paint and normal
+   interaction are never affected. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-theme-transition],
+  :root[data-theme-transition] * {
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      fill 0.2s ease !important;
   }
 }
 

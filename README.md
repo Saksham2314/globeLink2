@@ -7,19 +7,19 @@ thing. An AI assistant sits on top, acting only through validated tools.
 Full technical proposal: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Decisions log: [`docs/adr/`](docs/adr).
 
-## Status — Phase 7 (agent orchestrator + workspace)
+## Status — Phase 8 (mutating tools + confirmation)
 
-Implemented: Phase 0–6, plus the assistant — a streaming tool-calling loop
-behind `POST /api/agent` (Claude Haiku, `maxSteps` cap, per-turn timeout,
-per-user rate limit), persisted `AgentSession` / `AgentMessage` with windowed
-history and a rolling summary, and the `/assistant` workspace: a conversation
-with live tool-status chips and a preview canvas that renders the journeys the
-assistant finds. The agent can search and read journeys; it cannot yet save,
-create, or message. The AI layer still cannot import the database.
+Implemented: Phase 0–7, plus assistant-driven changes. It can now save a
+journey, create or update an itinerary, and send a message — every change
+except the reversible save is shown in a confirmation card (with the exact
+message text for `sendMessage`) and only runs when the user clicks Confirm.
+Mutations go through the existing domain services, keep their ownership checks,
+are capped per session and per tool, and are written to an `AuditLog`. Canvas
+journey cards get Open / Save / Plan-from-this buttons.
 
-**Not yet implemented:** mutating tools + the confirmation flow (Phase 8),
-AI evals + observability (Phase 9). See `docs/ARCHITECTURE.md`; phase decisions
-are in `docs/adr/`.
+**Not yet implemented:** AI evals + observability (Phase 9), UI polish +
+production hardening (Phase 10). See `docs/ARCHITECTURE.md`; phase decisions are
+in `docs/adr/`.
 
 ## Tech stack
 

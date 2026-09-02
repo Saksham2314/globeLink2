@@ -40,6 +40,7 @@ model User {
   conversations  ConversationParticipant[]
   sentMessages   Message[]
   itineraries    Itinerary[]
+  agentSessions  AgentSession[]
   agentToolCalls AgentToolCall[]
 
   @@map("users")
@@ -457,10 +458,9 @@ enum AgentToolCallStatus {
   AWAITING_CONFIRMATION
 }
 
-/// Observability row written for every tool call the factory runs. `sessionId`
-/// / `messageId` stay null until Phase 7 adds AgentSession / AgentMessage (the
-/// FKs land in that migration). No agent loop exists yet in Phase 6 — the two
-/// read tools are exercised directly and via natural-language search.
+/// Observability row written for every tool call the factory runs. Phase 7
+/// links `sessionId` to the owning AgentSession; `messageId` stays null (tool
+/// calls are logged mid-stream, before the assistant AgentMessage is persisted).
 model AgentToolCall {
   id        String              @id @default(cuid())
   sessionId String?
@@ -474,10 +474,64 @@ model AgentToolCall {
   error     String?
   createdAt DateTime            @default(now())
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user    User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  session AgentSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  message AgentMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@index([sessionId, createdAt])
   @@index([toolName, createdAt])
   @@map("agent_tool_calls")
+}
+
+// ---------------------------------------------------------------------------
+// Agent orchestrator (Phase 7)
+// ---------------------------------------------------------------------------
+
+enum AgentSessionStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum AgentMessageRole {
+  USER
+  ASSISTANT
+}
+
+/// One assistant conversation. `state` is working memory the orchestrator
+/// reads/writes each turn (last search results, extracted constraints, …).
+/// `summary` folds in turns that have scrolled out of the context window.
+model AgentSession {
+  id             String             @id @default(cuid())
+  userId         String
+  title          String             @default("New chat")
+  state          Json               @default("{}")
+  summary        String?
+  status         AgentSessionStatus @default(ACTIVE)
+  lastActivityAt DateTime           @default(now())
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AgentMessage[]
+  toolCalls AgentToolCall[]
+
+  @@index([userId, lastActivityAt])
+  @@map("agent_sessions")
+}
+
+/// A persisted turn. `parts` is stored exactly as the AI SDK produces it (text
+/// parts, tool calls, tool results) so a session replays and renders verbatim.
+model AgentMessage {
+  id        String           @id @default(cuid())
+  sessionId String
+  role      AgentMessageRole
+  parts     Json
+  createdAt DateTime         @default(now())
+
+  session   AgentSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  toolCalls AgentToolCall[]
+
+  @@index([sessionId, createdAt])
+  @@map("agent_messages")
 }

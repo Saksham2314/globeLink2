@@ -7,19 +7,19 @@ thing. An AI assistant sits on top, acting only through validated tools.
 Full technical proposal: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Decisions log: [`docs/adr/`](docs/adr).
 
-## Status — Phase 6 (AI foundation)
+## Status — Phase 7 (agent orchestrator + workspace)
 
-Implemented: Phase 0–5, plus the AI foundation — a `defineTool` factory (strict
-Zod schema, `read`/`mutate` kind, per-call `AgentToolCall` logging, normalized
-result contract), the `searchJourneys` and `getJourney` read tools over the
-domain services, and constraint extraction (`generateObject` on Claude Haiku)
-wired into a natural-language search box on Explore. The AI layer is
-structurally forbidden from importing the database. Works without an
-`ANTHROPIC_API_KEY` — natural-language search falls back to plain text search.
+Implemented: Phase 0–6, plus the assistant — a streaming tool-calling loop
+behind `POST /api/agent` (Claude Haiku, `maxSteps` cap, per-turn timeout,
+per-user rate limit), persisted `AgentSession` / `AgentMessage` with windowed
+history and a rolling summary, and the `/assistant` workspace: a conversation
+with live tool-status chips and a preview canvas that renders the journeys the
+assistant finds. The agent can search and read journeys; it cannot yet save,
+create, or message. The AI layer still cannot import the database.
 
-**Not yet implemented:** the agent loop and `/assistant` workspace (Phase 7),
-mutating tools + confirmation (Phase 8). See `docs/ARCHITECTURE.md`; phase
-decisions are in `docs/adr/`.
+**Not yet implemented:** mutating tools + the confirmation flow (Phase 8),
+AI evals + observability (Phase 9). See `docs/ARCHITECTURE.md`; phase decisions
+are in `docs/adr/`.
 
 ## Tech stack
 

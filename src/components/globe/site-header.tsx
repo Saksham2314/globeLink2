@@ -35,6 +35,14 @@ export async function SiteHeader({ nav = [] }: { nav?: NavLink[] }) {
           >
             Explore
           </Link>
+          {user ? (
+            <Link
+              href="/assistant"
+              className="text-muted hover:text-ink text-sm font-medium transition-colors"
+            >
+              Assistant
+            </Link>
+          ) : null}
           {user ? <MessagesNav initialCount={unread} /> : null}
         </div>
 

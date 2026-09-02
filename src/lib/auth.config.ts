@@ -10,7 +10,14 @@ import type { NextAuthConfig } from "next-auth";
  */
 
 /** Route prefixes that require a signed-in user. */
-const PROTECTED_PREFIXES = ["/settings", "/saved", "/messages", "/itineraries", "/journeys/new"];
+const PROTECTED_PREFIXES = [
+  "/settings",
+  "/saved",
+  "/messages",
+  "/itineraries",
+  "/assistant",
+  "/journeys/new",
+];
 
 /** Also protected: creating/editing a journey. `/journeys/<slug>` (view) is public. */
 function requiresAuth(pathname: string): boolean {

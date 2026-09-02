@@ -6,6 +6,9 @@
  */
 export interface ToolContext {
   userId: string | null;
+  /** The agent session this call belongs to, when invoked from the orchestrator.
+   *  Null for direct/standalone tool calls. Recorded on the AgentToolCall row. */
+  sessionId?: string | null;
   /** Reserved for future role-based tool filtering. */
   role?: "user" | "admin";
 }

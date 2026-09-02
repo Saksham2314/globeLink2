@@ -61,6 +61,7 @@ export function defineTool<TInput, TOutput>(
         const result = toolFail("BAD_ARGS", firstIssue(parsed.error));
         await recordAgentToolCall({
           userId: ctx.userId,
+          sessionId: ctx.sessionId ?? null,
           toolName: def.name,
           args: rawArgs,
           result,
@@ -80,6 +81,7 @@ export function defineTool<TInput, TOutput>(
         );
         await recordAgentToolCall({
           userId: ctx.userId,
+          sessionId: ctx.sessionId ?? null,
           toolName: def.name,
           args: parsed.data,
           result,
@@ -94,6 +96,7 @@ export function defineTool<TInput, TOutput>(
         const data = await def.handler(parsed.data, ctx);
         await recordAgentToolCall({
           userId: ctx.userId,
+          sessionId: ctx.sessionId ?? null,
           toolName: def.name,
           args: parsed.data,
           result: { ok: true },
@@ -112,6 +115,7 @@ export function defineTool<TInput, TOutput>(
         const result = toolFail(code, message);
         await recordAgentToolCall({
           userId: ctx.userId,
+          sessionId: ctx.sessionId ?? null,
           toolName: def.name,
           args: parsed.data,
           result,

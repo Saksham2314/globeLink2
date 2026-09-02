@@ -69,6 +69,9 @@ export function UserMenu({ name, handle, image }: UserMenuProps) {
             View profile
           </MenuLink>
         ) : null}
+        <MenuLink href="/itineraries" onNavigate={() => setOpen(false)}>
+          Itineraries
+        </MenuLink>
         <MenuLink href="/messages" onNavigate={() => setOpen(false)}>
           Messages
         </MenuLink>

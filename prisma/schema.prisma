@@ -39,6 +39,7 @@ model User {
   saved         SavedJourney[]
   conversations ConversationParticipant[]
   sentMessages  Message[]
+  itineraries   Itinerary[]
 
   @@map("users")
 }
@@ -189,6 +190,7 @@ model Journey {
   tags          JourneyTag[]
   savedBy       SavedJourney[]
   conversations Conversation[]
+  forkedInto    Itinerary[]
 
   @@index([authorId])
   @@index([status, publishedAt])
@@ -353,4 +355,90 @@ model Message {
 
   @@index([conversationId, createdAt])
   @@map("messages")
+}
+
+// ---------------------------------------------------------------------------
+// Personal itineraries (Phase 5)
+// ---------------------------------------------------------------------------
+
+enum ItineraryStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+}
+
+/// Who created a plan. `AGENT` is reserved for the Phase 7 AI tool.
+enum PlanOrigin {
+  USER
+  AGENT
+}
+
+/// A user's private trip plan. Structurally similar to a Journey's itinerary
+/// but a different lifecycle and owner — hence its own tables rather than a
+/// polymorphic FK (see docs/ARCHITECTURE.md).
+model Itinerary {
+  id              String          @id @default(cuid())
+  ownerId         String
+  title           String
+  destinationName String?
+  country         String?
+  startDate       DateTime?
+  endDate         DateTime?
+  status          ItineraryStatus @default(DRAFT)
+  /// Currency the plan's costs are entered in. Per-item costCurrency is kept
+  /// for a future multi-currency feature but not surfaced yet.
+  currency        String          @default("INR")
+  notes           String?
+  /// The published journey this was forked from, if any.
+  sourceJourneyId String?
+  createdBy       PlanOrigin      @default(USER)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  owner         User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  sourceJourney Journey?  @relation(fields: [sourceJourneyId], references: [id], onDelete: SetNull)
+  days          PlanDay[]
+
+  @@index([ownerId, updatedAt])
+  @@index([sourceJourneyId])
+  @@map("itineraries")
+}
+
+model PlanDay {
+  id          String    @id @default(cuid())
+  itineraryId String
+  dayNumber   Int
+  title       String?
+  date        DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  itinerary Itinerary  @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  items     PlanItem[]
+
+  @@unique([itineraryId, dayNumber])
+  @@index([itineraryId])
+  @@map("plan_days")
+}
+
+model PlanItem {
+  id           String   @id @default(cuid())
+  planDayId    String
+  position     Int      @default(0)
+  time         String?
+  type         StopType @default(ACTIVITY)
+  title        String
+  description  String?
+  locationName String?
+  /// Integer minor units, in the parent itinerary's currency.
+  cost         Int?
+  costCurrency String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  day PlanDay @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+
+  @@index([planDayId])
+  @@map("plan_items")
 }

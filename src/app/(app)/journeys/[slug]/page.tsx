@@ -7,6 +7,7 @@ import { JourneyStatRow } from "@/components/globe/journey-stat-row";
 import { JourneyTimeline } from "@/components/globe/journey-timeline";
 import { SaveButton } from "@/components/globe/save-button";
 import { StartConversationButton } from "@/components/globe/start-conversation-button";
+import { StartItineraryButton } from "@/components/globe/start-itinerary-button";
 import { Markdown } from "@/components/ui/markdown";
 import { auth } from "@/lib/auth";
 import { getPublicJourney, recordView } from "@/modules/journeys/journey.service";
@@ -109,6 +110,11 @@ export default async function JourneyPage({ params }: Params) {
 
             {!isViewerAuthor && journey.status === "PUBLISHED" ? (
               <div className="ml-auto flex items-center gap-2">
+                <StartItineraryButton
+                  slug={journey.slug}
+                  canFork={Boolean(session?.user)}
+                  returnTo={`/journeys/${journey.slug}`}
+                />
                 <StartConversationButton
                   authorId={authorId}
                   journeyId={journeyId}

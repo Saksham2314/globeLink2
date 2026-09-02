@@ -7,14 +7,15 @@ thing. An AI assistant sits on top, acting only through validated tools.
 Full technical proposal: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Decisions log: [`docs/adr/`](docs/adr).
 
-## Status — Phase 4 (messaging)
+## Status — Phase 5 (personal itineraries)
 
-Implemented: Phase 0–3, plus 1:1 messaging — an `/messages` inbox, a thread view
-with a composer, an unread badge, a "Message" button on journey pages, and
-near-real-time updates by polling an incremental fetch route.
+Implemented: Phase 0–4, plus private trip planning — an `/itineraries` list, a
+create screen, and a single always-editable page per plan with a day-by-day
+builder, a live cost estimate, and a "Plan my own" button on journey pages that
+forks a published journey into an editable plan.
 
-**Not yet implemented:** personal itineraries, the AI assistant. See
-`docs/ARCHITECTURE.md`; phase decisions are in `docs/adr/`.
+**Not yet implemented:** the AI assistant. See `docs/ARCHITECTURE.md`; phase
+decisions are in `docs/adr/`.
 
 ## Tech stack
 

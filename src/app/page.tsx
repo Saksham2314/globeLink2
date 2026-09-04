@@ -39,14 +39,14 @@ const DESTINATIONS = [
     tone: "from-[#3c5c80] to-[#7091b0]",
   },
   {
-    place: "Kyoto",
+    place: "Mount Fuji",
     country: "Japan",
     image: "/landing/featured-2.jpg",
     tone: "from-[#454f60] to-[#7b8a9d]",
   },
   {
-    place: "Sintra",
-    country: "Portugal",
+    place: "Tulum",
+    country: "Mexico",
     image: "/landing/featured-3.jpg",
     tone: "from-[#3a5566] to-[#6d909e]",
   },

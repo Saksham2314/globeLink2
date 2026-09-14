@@ -1,13 +1,32 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { useFBX } from "@react-three/drei";
 import { useReducedMotion } from "motion/react";
 import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
-/** public/models/earth.glb — see public/models/README.md for provenance/size notes. */
-const MODEL_URL = "/models/earth.glb";
+/** public/models/Globe_Digital.fbx — see public/models/README.md. */
+const MODEL_URL = "/models/Globe_Digital.fbx";
+
+/**
+ * The source FBX is a 12-mesh "digital globe" assembly, not one sphere: an
+ * inner base shell, a middle "Holo Grid" shell, an outer "Continents" shell
+ * (three near-identical radii — would z-fight if all rendered solid), five
+ * large decorative "Orbit" rings, and four small scattered "Cube" details far
+ * from center. None of that is texture-mapped — every material's Blender
+ * name ("Holo Grid", "Continents", "Edge wear (Cycles)") is a procedural-
+ * shader label that doesn't survive FBX export, so everything loads flat
+ * grey (#cccccc). So: keep only the two meshes that make a coherent globe —
+ * "Continents" as the solid sphere, "Holo Grid" as a wireframe shell just
+ * outside it — hide the rest, and retint what's left to the site's accent.
+ */
+const SOLID_MESH_NAME = "Outer_Layer-Continents";
+const WIREFRAME_MESH_NAME = "Middle_Layer-Holo_Grid";
+const TINT_COLOR = "#3f6b96";
+const TINT_EMISSIVE = "#2f4d70";
+const GRID_COLOR = "#a9cdea";
+const GRID_EMISSIVE = "#5b83ad";
 
 /** Slow, ambient rotation — smooth and non-distracting. Radians/second. */
 const ROTATE_SPEED = 0.12;
@@ -85,21 +104,85 @@ function Marker({
   );
 }
 
+/** Clone the loaded model (never mutate drei's cached, shared instance),
+ *  hide every mesh except the two that make a coherent globe, and retint
+ *  those two — one solid, one wireframe. */
+function prepareModel(source: THREE.Group): THREE.Group {
+  const clone = source.clone(true);
+  clone.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+
+    if (child.name === SOLID_MESH_NAME) {
+      child.material = tintMaterial(child.material, {
+        color: TINT_COLOR,
+        emissive: TINT_EMISSIVE,
+        emissiveIntensity: 0.4,
+        wireframe: false,
+      });
+    } else if (child.name === WIREFRAME_MESH_NAME) {
+      child.material = tintMaterial(child.material, {
+        color: GRID_COLOR,
+        emissive: GRID_EMISSIVE,
+        emissiveIntensity: 0.9,
+        wireframe: true,
+      });
+    } else {
+      child.visible = false;
+    }
+  });
+  return clone;
+}
+
+function tintMaterial(
+  material: THREE.Material | THREE.Material[],
+  opts: { color: string; emissive: string; emissiveIntensity: number; wireframe: boolean },
+): THREE.Material | THREE.Material[] {
+  const tintOne = (mat: THREE.Material): THREE.Material => {
+    if (!(mat instanceof THREE.MeshPhongMaterial)) return mat;
+    const tinted = mat.clone();
+    tinted.color = new THREE.Color(opts.color);
+    tinted.emissive = new THREE.Color(opts.emissive);
+    tinted.emissiveIntensity = opts.emissiveIntensity;
+    tinted.specular = new THREE.Color("#dce6f0");
+    tinted.shininess = 45;
+    tinted.wireframe = opts.wireframe;
+    return tinted;
+  };
+  return Array.isArray(material) ? material.map(tintOne) : tintOne(material);
+}
+
+/** Bounding sphere over only the meshes actually left visible — the full
+ *  object's box would still include the hidden orbit rings/cubes, which
+ *  Box3.setFromObject does not skip just because .visible is false. */
+function visibleBoundingSphere(root: THREE.Object3D): THREE.Sphere {
+  const box = new THREE.Box3();
+  let any = false;
+  root.traverse((child) => {
+    if (child instanceof THREE.Mesh && child.visible) {
+      box.union(new THREE.Box3().setFromObject(child));
+      any = true;
+    }
+  });
+  if (!any) box.setFromObject(root); // defensive fallback, should not happen
+  return box.getBoundingSphere(new THREE.Sphere());
+}
+
 function Scene({ reduceMotion }: { reduceMotion: boolean }) {
-  const { scene } = useGLTF(MODEL_URL);
+  const fbx = useFBX(MODEL_URL);
   const { camera } = useThree();
   const groupRef = useRef<THREE.Group>(null);
 
-  // The model's geometry is not centered at its own origin (this particular
-  // export's bounding box runs roughly y: -126..1105, i.e. offset ~490 units)
-  // and its bounding-sphere radius is large (~1000+ units) — so both the
-  // camera's look-at point and its near/far planes have to be derived from
-  // the actual bounds, never assumed. Getting either wrong renders nothing.
+  const model = useMemo(() => prepareModel(fbx), [fbx]);
+
+  // The model's geometry is not centered at its own origin, and its
+  // bounding-sphere radius varies by asset (this one is on the order of
+  // 1000+ units) — so both the camera's look-at point and its near/far
+  // planes have to be derived from the actual bounds, never assumed.
+  // Getting either wrong renders nothing (verified: it did, once).
   const { radius, center } = useMemo(() => {
-    const box = new THREE.Box3().setFromObject(scene);
-    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    const sphere = visibleBoundingSphere(model);
     return { radius: sphere.radius || 1, center: sphere.center.clone() };
-  }, [scene]);
+  }, [model]);
 
   // Layout effect, not a plain effect: applied before the first paint, so
   // there's no frame where the default camera (fit for a unit-scale model)
@@ -128,7 +211,7 @@ function Scene({ reduceMotion }: { reduceMotion: boolean }) {
     <group ref={groupRef}>
       {/* Recenter the model onto the group's local origin, so it spins in
           place around its own middle instead of orbiting an offset point. */}
-      <primitive object={scene} position={[-center.x, -center.y, -center.z]} />
+      <primitive object={model} position={[-center.x, -center.y, -center.z]} />
       {MARKERS.map((m, i) => (
         <Marker
           key={m.label}
@@ -154,12 +237,15 @@ export function HeroGlobe() {
     <div className="size-full">
       <Canvas
         dpr={[1, 2]}
-        gl={{ antialias: true, alpha: true }}
+        // NoToneMapping: R3F's default ACES filmic curve desaturates mid-tone
+        // colors under bright lighting — with it on, the tinted material was
+        // reading as near-white/grey instead of the blue actually specified.
+        gl={{ antialias: true, alpha: true, toneMapping: THREE.NoToneMapping }}
         camera={{ fov: 40, position: [0, 0, 4] }}
       >
-        <ambientLight intensity={0.9} />
-        <directionalLight position={[4, 3, 5]} intensity={1.4} />
-        <directionalLight position={[-4, -2, -3]} intensity={0.3} />
+        <ambientLight intensity={0.55} />
+        <directionalLight position={[4, 3, 5]} intensity={0.85} />
+        <directionalLight position={[-4, -2, -3]} intensity={0.2} />
         <Suspense fallback={null}>
           <Scene reduceMotion={reduceMotion} />
         </Suspense>
@@ -168,4 +254,4 @@ export function HeroGlobe() {
   );
 }
 
-useGLTF.preload(MODEL_URL);
+useFBX.preload(MODEL_URL);

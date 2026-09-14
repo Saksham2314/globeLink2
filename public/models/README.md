@@ -1,22 +1,34 @@
 # 3D models
 
-Drop the hero globe model here as:
+The hero globe model: **`Globe_Digital.fbx`** — loaded by
+`src/components/globe/hero-globe.tsx` via `@react-three/drei`'s `useFBX`.
 
-- `earth.glb`
+Notes on this specific asset (checked before wiring it up, not guessed):
 
-Reachable at `/models/earth.glb` once dropped (anything under `public/` is
-served verbatim from the site root).
+- **~59K triangles, 12 meshes** — no optimization needed.
+- **No embedded or referenced textures.** Its material names ("Holo Grid",
+  "Continents", "Edge wear (Cycles)") are Blender procedural-shader labels
+  that don't survive FBX export — every material loads as flat grey
+  (`#cccccc`). `hero-globe.tsx` retints them to the site's own accent color
+  rather than shipping literal placeholder grey.
+- Its bounding box is not centered at the model's own origin, and its
+  bounding-sphere radius is large (~2200+ units in whatever unit the source
+  file used) — the component derives both from the real geometry at runtime
+  (`THREE.Box3.setFromObject` + `getBoundingSphere`) rather than assuming a
+  scale, since getting that wrong renders nothing (it did, once, with the
+  previous model).
 
-Guidelines:
+## Swapping in a different model later
 
-- **Format**: `.glb` (binary glTF, textures embedded in one file — simplest
-  to serve). If you only have a `.gltf` + separate texture files, drop the
-  whole folder and tell me the entry filename instead.
-- **Size**: this loads client-side on the landing page — keep it under a few
-  MB if you can. If it's large because of high-poly geometry, Draco
-  compression helps a lot, but the decoder must be **self-hosted** (copied
-  into `public/`) rather than loaded from Google's CDN — the site's CSP
-  (`src/lib/csp.ts`) only allows same-origin scripts, and a CDN-hosted
-  decoder would violate it once CSP moves from Report-Only to enforcing.
-- Texture resolution: 2K is usually plenty for a hero-sized globe; 4K+ textures
-  bloat the file for no visible gain at that size on screen.
+If you replace `Globe_Digital.fbx` with something else:
+
+- **`.fbx`** → works as-is, same `useFBX` loader. If it has real textures
+  this time, drop the `retint()` step in `hero-globe.tsx` (or make it
+  conditional on `mat.map` being unset) so a real texture isn't overwritten.
+- **`.glb`/`.gltf`** → swap `useFBX` for `@react-three/drei`'s `useGLTF`
+  (the component used this earlier; `git log -- src/components/globe/hero-globe.tsx`
+  has the previous version) and update `MODEL_URL`'s extension.
+- Either way: keep it reasonably light for a hero decoration (a few MB at
+  most — it's committed to the repo and downloaded client-side on the
+  landing page), and re-check the camera math in `Scene()` still fits the
+  new model's actual bounds; don't assume a scale.

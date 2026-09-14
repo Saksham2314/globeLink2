@@ -3,7 +3,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { useReducedMotion } from "motion/react";
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 /** public/models/earth.glb — see public/models/README.md for provenance/size notes. */
@@ -90,19 +90,28 @@ function Scene({ reduceMotion }: { reduceMotion: boolean }) {
   const { camera } = useThree();
   const groupRef = useRef<THREE.Group>(null);
 
-  // The model's real-world scale isn't something we control here, so fit the
-  // camera and marker placement to whatever radius it actually has.
-  const radius = useMemo(() => {
+  // The model's geometry is not centered at its own origin (this particular
+  // export's bounding box runs roughly y: -126..1105, i.e. offset ~490 units)
+  // and its bounding-sphere radius is large (~1000+ units) — so both the
+  // camera's look-at point and its near/far planes have to be derived from
+  // the actual bounds, never assumed. Getting either wrong renders nothing.
+  const { radius, center } = useMemo(() => {
     const box = new THREE.Box3().setFromObject(scene);
     const sphere = box.getBoundingSphere(new THREE.Sphere());
-    return sphere.radius || 1;
+    return { radius: sphere.radius || 1, center: sphere.center.clone() };
   }, [scene]);
 
-  useEffect(() => {
-    camera.position.set(0, 0, radius * 2.7);
+  // Layout effect, not a plain effect: applied before the first paint, so
+  // there's no frame where the default camera (fit for a unit-scale model)
+  // briefly renders against this model's actual ~1000-unit scale.
+  useLayoutEffect(() => {
+    const distance = radius * 3.2; // comfortable margin around the sphere
+    camera.position.set(0, 0, distance);
     camera.lookAt(0, 0, 0);
     if (camera instanceof THREE.PerspectiveCamera) {
       camera.fov = 40;
+      camera.near = Math.max(radius * 0.01, 0.01);
+      camera.far = distance + radius * 4; // default far=2000 clipped this away entirely
       camera.updateProjectionMatrix();
     }
   }, [camera, radius]);
@@ -117,7 +126,9 @@ function Scene({ reduceMotion }: { reduceMotion: boolean }) {
 
   return (
     <group ref={groupRef}>
-      <primitive object={scene} />
+      {/* Recenter the model onto the group's local origin, so it spins in
+          place around its own middle instead of orbiting an offset point. */}
+      <primitive object={scene} position={[-center.x, -center.y, -center.z]} />
       {MARKERS.map((m, i) => (
         <Marker
           key={m.label}

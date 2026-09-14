@@ -1,6 +1,5 @@
 import Image from "next/image";
 
-import { HeroGlobeLoader } from "@/components/globe/hero-globe-loader";
 import { SiteFooter } from "@/components/globe/site-footer";
 import { SiteHeader } from "@/components/globe/site-header";
 import { Reveal, RevealGroup, RevealItem } from "@/components/motion/reveal";
@@ -66,91 +65,82 @@ export default function HomePage() {
             className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px] bg-[radial-gradient(60%_60%_at_50%_0%,var(--color-accent-soft),transparent_75%)]"
           />
           <Container className="pt-20 pb-24 md:pt-28 md:pb-32">
-            <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-center lg:gap-12">
-              <RevealGroup
-                once={false}
-                className="flex max-w-3xl flex-col items-start gap-6 md:gap-7"
-              >
-                <RevealItem className="text-muted text-xs font-semibold tracking-[0.16em] uppercase">
-                  Real journeys, real people
-                </RevealItem>
+            <RevealGroup
+              once={false}
+              className="flex max-w-3xl flex-col items-start gap-6 md:gap-7"
+            >
+              <RevealItem className="text-muted text-xs font-semibold tracking-[0.16em] uppercase">
+                Real journeys, real people
+              </RevealItem>
 
-                <RevealItem>
-                  <h1 className="text-ink text-4xl md:text-6xl">
-                    The travel platform built on trips that actually happened.
-                  </h1>
-                </RevealItem>
+              <RevealItem>
+                <h1 className="text-ink text-4xl md:text-6xl">
+                  The travel platform built on trips that actually happened.
+                </h1>
+              </RevealItem>
 
-                <RevealItem className="text-muted max-w-xl text-lg leading-relaxed">
-                  GlobeLink is where travellers publish the journeys they&rsquo;ve completed — and
-                  where you find, save, and plan yours from the real thing.
-                </RevealItem>
+              <RevealItem className="text-muted max-w-xl text-lg leading-relaxed">
+                GlobeLink is where travellers publish the journeys they&rsquo;ve completed — and
+                where you find, save, and plan yours from the real thing.
+              </RevealItem>
 
-                <RevealItem className="w-full max-w-xl">
-                  <form
-                    action="/explore"
-                    aria-label="Search journeys"
-                    className="border-border-strong bg-surface flex w-full items-center gap-2 rounded-lg border p-2 shadow-sm"
+              <RevealItem className="w-full max-w-xl">
+                <form
+                  action="/explore"
+                  aria-label="Search journeys"
+                  className="border-border-strong bg-surface flex w-full items-center gap-2 rounded-lg border p-2 shadow-sm"
+                >
+                  <svg
+                    aria-hidden
+                    viewBox="0 0 20 20"
+                    className="text-muted ml-2 size-5 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
                   >
-                    <svg
-                      aria-hidden
-                      viewBox="0 0 20 20"
-                      className="text-muted ml-2 size-5 shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                    >
-                      <circle cx="9" cy="9" r="6" />
-                      <path d="m18 18-4.5-4.5" strokeLinecap="round" />
-                    </svg>
-                    <input
-                      type="text"
-                      name="q"
-                      placeholder="Try &ldquo;Manali&rdquo; or &ldquo;coastal Portugal&rdquo;"
-                      className="text-ink placeholder:text-muted h-10 flex-1 bg-transparent px-1 text-sm focus:outline-none"
-                    />
-                    <button
-                      type="submit"
-                      className="bg-accent text-accent-contrast hover:bg-accent-hover rounded-md px-3 py-2 text-xs font-medium transition-colors"
-                    >
-                      Search
-                    </button>
-                  </form>
-                  <p className="text-muted mt-3 text-xs">
-                    Or{" "}
-                    <a href="/explore" className="text-accent hover:underline">
-                      browse everything
-                    </a>
-                    .
-                  </p>
-                </RevealItem>
+                    <circle cx="9" cy="9" r="6" />
+                    <path d="m18 18-4.5-4.5" strokeLinecap="round" />
+                  </svg>
+                  <input
+                    type="text"
+                    name="q"
+                    placeholder="Try &ldquo;Manali&rdquo; or &ldquo;coastal Portugal&rdquo;"
+                    className="text-ink placeholder:text-muted h-10 flex-1 bg-transparent px-1 text-sm focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-accent text-accent-contrast hover:bg-accent-hover rounded-md px-3 py-2 text-xs font-medium transition-colors"
+                  >
+                    Search
+                  </button>
+                </form>
+                <p className="text-muted mt-3 text-xs">
+                  Or{" "}
+                  <a href="/explore" className="text-accent hover:underline">
+                    browse everything
+                  </a>
+                  .
+                </p>
+              </RevealItem>
 
-                <RevealItem>
-                  <ul className="flex flex-wrap gap-2">
-                    {[
-                      "Himalayan treks",
-                      "Two weeks in Vietnam",
-                      "Coastal Portugal",
-                      "Slow travel",
-                    ].map((chip) => (
-                      <li
-                        key={chip}
-                        className="border-border bg-surface-muted text-muted rounded-full border px-3 py-1 text-xs"
-                      >
-                        {chip}
-                      </li>
-                    ))}
-                  </ul>
-                </RevealItem>
-              </RevealGroup>
-
-              {/* Desktop only — see hero-globe-loader.tsx for why. */}
-              <div className="hidden lg:block">
-                <div className="mx-auto aspect-square w-full max-w-[400px]">
-                  <HeroGlobeLoader />
-                </div>
-              </div>
-            </div>
+              <RevealItem>
+                <ul className="flex flex-wrap gap-2">
+                  {[
+                    "Himalayan treks",
+                    "Two weeks in Vietnam",
+                    "Coastal Portugal",
+                    "Slow travel",
+                  ].map((chip) => (
+                    <li
+                      key={chip}
+                      className="border-border bg-surface-muted text-muted rounded-full border px-3 py-1 text-xs"
+                    >
+                      {chip}
+                    </li>
+                  ))}
+                </ul>
+              </RevealItem>
+            </RevealGroup>
           </Container>
         </section>
 

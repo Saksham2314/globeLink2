@@ -6,9 +6,13 @@ import {
   isPublishable,
   itinerarySchema,
   journeyBudgetSchema,
+  journeyContentSchema,
   journeyRouteSchema,
+  MAX_TIPS,
   publishRequirements,
+  TIP_MAX_LENGTH,
 } from "./journey.schema";
+import { submittedValues } from "@/lib/forms";
 
 describe("createJourneySchema", () => {
   it("requires a title of at least 3 characters", () => {
@@ -176,5 +180,41 @@ describe("publish readiness", () => {
 
   it("passes once a story and duration are present", () => {
     expect(isPublishable({ ...base, description: "It was great", durationDays: 4 })).toBe(true);
+  });
+});
+
+describe("journeyContentSchema tips", () => {
+  it("accepts a tip right at the limit", () => {
+    const r = journeyContentSchema.safeParse({ tips: ["a".repeat(TIP_MAX_LENGTH)] });
+    expect(r.success).toBe(true);
+  });
+
+  it("names the over-long tip and says how to fix it", () => {
+    const r = journeyContentSchema.safeParse({ tips: ["short", "b".repeat(612)] });
+    expect(r.success).toBe(false);
+    const msg = r.success ? "" : r.error.issues[0]!.message;
+    expect(msg).toContain("Tip 2 is 612 characters");
+    expect(msg).toContain(String(TIP_MAX_LENGTH));
+    expect(r.success ? null : r.error.issues[0]!.path[0]).toBe("tips");
+  });
+
+  it("caps the number of tips", () => {
+    const r = journeyContentSchema.safeParse({
+      tips: Array.from({ length: MAX_TIPS + 1 }, () => "x"),
+    });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe("submittedValues", () => {
+  it("echoes only the named text fields", () => {
+    const fd = new FormData();
+    fd.set("description", "my story");
+    fd.set("tips", "one\ntwo");
+    fd.set("journeyId", "j1");
+    expect(submittedValues(fd, ["description", "tips", "missing"])).toEqual({
+      description: "my story",
+      tips: "one\ntwo",
+    });
   });
 });

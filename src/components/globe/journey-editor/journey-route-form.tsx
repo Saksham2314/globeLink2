@@ -16,6 +16,8 @@ const today = () => new Date().toISOString().slice(0, 10);
 export function JourneyRouteForm({ journey }: { journey: JourneyEditDto }) {
   const [state, action] = useActionState(updateRouteAction, initial);
   const e = state.fieldErrors ?? {};
+  // After a failed save, show what was typed — not the last saved version.
+  const v = state.values;
   const max = today();
 
   return (
@@ -35,7 +37,7 @@ export function JourneyRouteForm({ journey }: { journey: JourneyEditDto }) {
             name="startDate"
             type="date"
             max={max}
-            defaultValue={toDateInput(journey.startDate)}
+            defaultValue={v?.startDate ?? toDateInput(journey.startDate)}
             invalid={!!e.startDate}
           />
         </Field>
@@ -45,7 +47,7 @@ export function JourneyRouteForm({ journey }: { journey: JourneyEditDto }) {
             name="endDate"
             type="date"
             max={max}
-            defaultValue={toDateInput(journey.endDate)}
+            defaultValue={v?.endDate ?? toDateInput(journey.endDate)}
             invalid={!!e.endDate}
           />
         </Field>
@@ -63,7 +65,7 @@ export function JourneyRouteForm({ journey }: { journey: JourneyEditDto }) {
           type="number"
           min={1}
           max={365}
-          defaultValue={journey.durationDays ?? ""}
+          defaultValue={v?.durationDays ?? journey.durationDays ?? ""}
           className="max-w-32"
         />
       </Field>

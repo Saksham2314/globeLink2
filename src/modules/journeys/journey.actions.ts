@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
 import { AppError, isAppError } from "@/lib/errors";
-import { firstErrors, type FormState } from "@/lib/forms";
+import { firstErrors, submittedValues, type FormState } from "@/lib/forms";
 import { logger } from "@/lib/logger";
 
 import {
@@ -91,6 +91,10 @@ function jid(formData: FormData): string {
   return String(formData.get("journeyId") ?? "");
 }
 
+const BASICS_FIELDS = ["title", "summary", "originName", "destinationName", "country", "region"];
+const ROUTE_FIELDS = ["startDate", "endDate", "durationDays"];
+const CONTENT_FIELDS = ["description", "tips"];
+
 export async function updateBasicsAction(_prev: FormState, formData: FormData): Promise<FormState> {
   let userId: string;
   try {
@@ -98,6 +102,7 @@ export async function updateBasicsAction(_prev: FormState, formData: FormData): 
   } catch {
     return { error: "Please sign in again." };
   }
+  const values = submittedValues(formData, BASICS_FIELDS);
   const parsed = journeyBasicsSchema.safeParse({
     title: formData.get("title"),
     summary: formData.get("summary") ?? undefined,
@@ -106,12 +111,12 @@ export async function updateBasicsAction(_prev: FormState, formData: FormData): 
     country: formData.get("country") ?? undefined,
     region: formData.get("region") ?? undefined,
   });
-  if (!parsed.success) return { fieldErrors: firstErrors(parsed.error) };
+  if (!parsed.success) return { fieldErrors: firstErrors(parsed.error), values };
 
   try {
     revalidateJourney(await updateBasics(userId, jid(formData), parsed.data));
   } catch (error) {
-    return fail(error);
+    return { ...fail(error), values };
   }
   return { ok: true, message: "Saved." };
 }
@@ -123,17 +128,18 @@ export async function updateRouteAction(_prev: FormState, formData: FormData): P
   } catch {
     return { error: "Please sign in again." };
   }
+  const values = submittedValues(formData, ROUTE_FIELDS);
   const parsed = journeyRouteSchema.safeParse({
     startDate: formData.get("startDate") || undefined,
     endDate: formData.get("endDate") || undefined,
     durationDays: formData.get("durationDays") || undefined,
   });
-  if (!parsed.success) return { fieldErrors: firstErrors(parsed.error) };
+  if (!parsed.success) return { fieldErrors: firstErrors(parsed.error), values };
 
   try {
     revalidateJourney(await updateRoute(userId, jid(formData), parsed.data));
   } catch (error) {
-    return fail(error);
+    return { ...fail(error), values };
   }
   return { ok: true, message: "Saved." };
 }
@@ -172,6 +178,7 @@ export async function updateContentAction(
   } catch {
     return { error: "Please sign in again." };
   }
+  const values = submittedValues(formData, CONTENT_FIELDS);
   const tips = String(formData.get("tips") ?? "")
     .split("\n")
     .map((t) => t.trim())
@@ -180,12 +187,12 @@ export async function updateContentAction(
     description: formData.get("description") ?? undefined,
     tips,
   });
-  if (!parsed.success) return { fieldErrors: firstErrors(parsed.error) };
+  if (!parsed.success) return { fieldErrors: firstErrors(parsed.error), values };
 
   try {
     revalidateJourney(await updateContent(userId, jid(formData), parsed.data));
   } catch (error) {
-    return fail(error);
+    return { ...fail(error), values };
   }
   return { ok: true, message: "Saved." };
 }

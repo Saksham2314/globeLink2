@@ -64,9 +64,25 @@ export const journeyBudgetSchema = z.object({
 });
 export type JourneyBudgetInput = z.infer<typeof journeyBudgetSchema>;
 
+export const TIP_MAX_LENGTH = 500;
+export const MAX_TIPS = 30;
+
 export const journeyContentSchema = z.object({
   description: trimmedOptional(20_000),
-  tips: z.array(z.string().trim().min(1).max(200)).max(20).default([]),
+  tips: z
+    .array(z.string().trim().min(1))
+    .max(MAX_TIPS, `Up to ${MAX_TIPS} tips — combine a few, or move some into the story.`)
+    .superRefine((tips, ctx) => {
+      // Name the offending tip: the form shows all tips in one box, one per line.
+      const i = tips.findIndex((t) => t.length > TIP_MAX_LENGTH);
+      if (i !== -1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Tip ${i + 1} is ${tips[i]!.length} characters — keep each tip to ${TIP_MAX_LENGTH} or fewer (split it across lines).`,
+        });
+      }
+    })
+    .default([]),
 });
 export type JourneyContentInput = z.infer<typeof journeyContentSchema>;
 

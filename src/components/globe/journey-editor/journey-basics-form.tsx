@@ -15,6 +15,8 @@ const initial: FormState = {};
 export function JourneyBasicsForm({ journey }: { journey: JourneyEditDto }) {
   const [state, action] = useActionState(updateBasicsAction, initial);
   const e = state.fieldErrors ?? {};
+  // After a failed save, show what was typed — not the last saved version.
+  const v = state.values;
 
   return (
     <form action={action} className="space-y-4" noValidate>
@@ -22,7 +24,13 @@ export function JourneyBasicsForm({ journey }: { journey: JourneyEditDto }) {
       <FormMessage error={state.error} message={state.ok ? state.message : undefined} />
 
       <Field label="Title" htmlFor="title" error={e.title}>
-        <Input id="title" name="title" defaultValue={journey.title} required invalid={!!e.title} />
+        <Input
+          id="title"
+          name="title"
+          defaultValue={v?.title ?? journey.title}
+          required
+          invalid={!!e.title}
+        />
       </Field>
 
       <Field
@@ -35,7 +43,7 @@ export function JourneyBasicsForm({ journey }: { journey: JourneyEditDto }) {
           id="summary"
           name="summary"
           rows={2}
-          defaultValue={journey.summary ?? ""}
+          defaultValue={v?.summary ?? journey.summary ?? ""}
           maxLength={280}
           invalid={!!e.summary}
         />
@@ -46,7 +54,7 @@ export function JourneyBasicsForm({ journey }: { journey: JourneyEditDto }) {
           <Input
             id="originName"
             name="originName"
-            defaultValue={journey.originName ?? ""}
+            defaultValue={v?.originName ?? journey.originName ?? ""}
             placeholder="e.g. Delhi"
           />
         </Field>
@@ -54,15 +62,15 @@ export function JourneyBasicsForm({ journey }: { journey: JourneyEditDto }) {
           <Input
             id="destinationName"
             name="destinationName"
-            defaultValue={journey.destinationName ?? ""}
+            defaultValue={v?.destinationName ?? journey.destinationName ?? ""}
             placeholder="e.g. Manali"
           />
         </Field>
         <Field label="Country" htmlFor="country" error={e.country}>
-          <Input id="country" name="country" defaultValue={journey.country ?? ""} />
+          <Input id="country" name="country" defaultValue={v?.country ?? journey.country ?? ""} />
         </Field>
         <Field label="Region / state" htmlFor="region" error={e.region}>
-          <Input id="region" name="region" defaultValue={journey.region ?? ""} />
+          <Input id="region" name="region" defaultValue={v?.region ?? journey.region ?? ""} />
         </Field>
       </div>
 

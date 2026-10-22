@@ -43,6 +43,11 @@
 
   --font-sans: var(--gl-font-sans);
   --font-display: var(--gl-font-display);
+
+  /* Landing-only roles (defined inside `.gl-landing`, see tokens.css). */
+  --color-gold: var(--gl-gold);
+  --color-gold-line: var(--gl-gold-line);
+  --color-space: var(--gl-space);
 }
 
 @layer base {
@@ -109,5 +114,234 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * Landing page
+ * ------------------------------------------------------------------------- */
+
+/* Hero entrance: pure CSS, so the headline, search and CTAs animate from the
+   very first paint — no waiting on hydration, the globe, or any asset. The
+   reduced-motion rule above collapses it to instant. */
+@keyframes gl-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.gl-rise {
+  animation: gl-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--gl-delay, 0s);
+}
+
+/* Hero sky: a vertical gradient plus a slow, drifting aurora (transform only). */
+.gl-hero {
+  background: linear-gradient(to bottom, var(--gl-space-top), var(--gl-space) 70%);
+}
+.gl-hero::before {
+  content: "";
+  position: absolute;
+  inset: -25% -15%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(42% 38% at 72% 40%, var(--gl-space-glow), transparent 70%),
+    radial-gradient(30% 30% at 18% 78%, var(--gl-space-glow-2), transparent 70%),
+    radial-gradient(26% 24% at 40% 12%, var(--gl-space-glow), transparent 70%);
+  animation: gl-aurora 26s ease-in-out infinite alternate;
+}
+@keyframes gl-aurora {
+  from {
+    transform: translate3d(-3%, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(4%, -3%, 0) scale(1.08);
+  }
+}
+/* Dissolve the hero into the page so the next section reads as a continuation. */
+.gl-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 9rem;
+  background: linear-gradient(to bottom, transparent, var(--gl-bg));
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Static globe: what renders first, without WebGL, or if the scene fails.
+   Sized from the stage's shorter side (container units) to match the scene. */
+.gl-globe-stage {
+  container-type: size;
+}
+.gl-globe-fallback {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 80cqmin;
+  height: 80cqmin;
+  translate: -50% -50%;
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 34% 30%, var(--gl-globe-a), var(--gl-globe-b) 68%), var(--gl-globe-b);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--gl-globe-a) 30%, transparent),
+    0 0 90px 14px var(--gl-globe-glow);
+}
+
+/* Leaves carried off on the wind across the hero, toward the globe.
+   Viewport units keep the drift proportional at every screen size. */
+.gl-leaf {
+  position: absolute;
+  width: var(--size, 18px);
+  height: var(--size, 18px);
+  color: var(--leaf, var(--gl-leaf-1));
+  opacity: 0;
+  animation: var(--path, gl-drift-a) var(--dur, 16s) linear var(--delay, 0s) infinite;
+  will-change: transform, opacity;
+}
+@keyframes gl-drift-a {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.95;
+  }
+  35% {
+    transform: translate3d(18vw, -10vh, 0) rotate(140deg);
+  }
+  65% {
+    transform: translate3d(36vw, -8vh, 0) rotate(260deg);
+  }
+  88% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate3d(58vw, -26vh, 0) rotate(400deg);
+    opacity: 0;
+  }
+}
+@keyframes gl-drift-b {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(20deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  40% {
+    transform: translate3d(22vw, -18vh, 0) rotate(-90deg);
+  }
+  70% {
+    transform: translate3d(40vw, -12vh, 0) rotate(-200deg);
+  }
+  90% {
+    opacity: 0.75;
+  }
+  100% {
+    transform: translate3d(52vw, -34vh, 0) rotate(-320deg);
+    opacity: 0;
+  }
+}
+@keyframes gl-drift-c {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-30deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  45% {
+    transform: translate3d(26vw, -4vh, 0) rotate(120deg);
+  }
+  75% {
+    transform: translate3d(44vw, -20vh, 0) rotate(230deg);
+  }
+  90% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate3d(62vw, -18vh, 0) rotate(330deg);
+    opacity: 0;
+  }
+}
+
+/* Scroll cue */
+@keyframes gl-cue {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 1;
+  }
+}
+.gl-cue {
+  animation: gl-cue 2.4s ease-in-out infinite;
+}
+
+/* 3D tilt card: rotation comes from CSS variables set on pointer move. */
+.gl-tilt {
+  position: relative;
+  transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateZ(0);
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+}
+.gl-tilt[data-tilting] {
+  transition: transform 0.12s ease-out;
+}
+.gl-tilt-sheen {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border-radius: inherit;
+  background: radial-gradient(
+    420px circle at var(--mx, 50%) var(--my, 50%),
+    var(--gl-sheen),
+    transparent 45%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.gl-tilt[data-tilting] .gl-tilt-sheen {
+  opacity: 1;
+}
+
+/* Journey tree: leaves still on the branch sway; destination pins breathe. */
+.gl-sway {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: gl-sway 3.6s ease-in-out infinite alternate;
+}
+@keyframes gl-sway {
+  from {
+    rotate: -7deg;
+  }
+  to {
+    rotate: 7deg;
+  }
+}
+.gl-pin-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gl-pin 2.8s ease-out infinite;
+}
+@keyframes gl-pin {
+  from {
+    scale: 0.6;
+    opacity: 0.8;
+  }
+  to {
+    scale: 2;
+    opacity: 0;
   }
 }

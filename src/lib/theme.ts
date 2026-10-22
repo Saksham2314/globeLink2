@@ -11,6 +11,9 @@
  * `<html style="color-scheme">`. First paint is handled by an inline script in
  * the root layout that reads the same cookie/key BEFORE the body renders —
  * keep it in sync with the constant below.
+ *
+ * A visitor who has never chosen gets DARK, on every device and browser —
+ * not their OS setting. "System" is still available as an explicit choice.
  */
 
 export const THEME_STORAGE_KEY = "gl-theme";
@@ -20,6 +23,9 @@ export type ThemePreference = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";
 
 export const THEME_PREFERENCES: ThemePreference[] = ["light", "dark", "system"];
+
+/** What a visitor gets before they have ever picked a theme. */
+export const DEFAULT_THEME_PREFERENCE: ThemePreference = "dark";
 
 function isPref(v: unknown): v is ThemePreference {
   return v === "light" || v === "dark" || v === "system";
@@ -42,14 +48,14 @@ function writeCookie(pref: ThemePreference): void {
 export function getStoredPreference(): ThemePreference {
   const fromCookie = cookiePreference();
   if (fromCookie) return fromCookie;
-  if (typeof window === "undefined") return "system";
+  if (typeof window === "undefined") return DEFAULT_THEME_PREFERENCE;
   try {
     const value = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (isPref(value)) return value;
   } catch {
     // storage unavailable (private mode, blocked) — fall through
   }
-  return "system";
+  return DEFAULT_THEME_PREFERENCE;
 }
 
 function systemTheme(): ResolvedTheme {

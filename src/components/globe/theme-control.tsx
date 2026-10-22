@@ -8,6 +8,7 @@ import {
   resolvePreference,
   setThemePreference,
   applyResolvedTheme,
+  DEFAULT_THEME_PREFERENCE,
   type ThemePreference,
 } from "@/lib/theme";
 import { saveThemePreferenceAction } from "@/modules/users/user.actions";
@@ -22,7 +23,7 @@ const TRANSITION_MS = 220;
 
 export function ThemeControl({ variant = "menu" }: { variant?: "menu" | "inline" }) {
   const [mounted, setMounted] = useState(false);
-  const [pref, setPref] = useState<ThemePreference>("system");
+  const [pref, setPref] = useState<ThemePreference>(DEFAULT_THEME_PREFERENCE);
   const prefRef = useRef(pref);
   prefRef.current = pref;
 

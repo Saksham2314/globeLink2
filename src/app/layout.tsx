@@ -42,26 +42,32 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+// Dark is the default everywhere, so the browser chrome matches it.
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f7f9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d1219" },
-  ],
+  themeColor: "#0d1219",
 };
 
 /**
  * Resolves the theme and stamps `<html>` BEFORE the body paints, so there is
  * never a flash of the wrong theme. Reads the `gl-theme` cookie first (set for
  * signed-in users and synced across devices), then localStorage — kept in sync
- * with src/lib/theme.ts.
+ * with src/lib/theme.ts. No stored choice → dark (DEFAULT_THEME_PREFERENCE).
  */
-const themeScript = `(function(){try{var m=document.cookie.match(/(?:^|;\\s*)gl-theme=(light|dark|system)\\b/);var p=m?m[1]:localStorage.getItem("gl-theme");var dark=p==="dark"||(p!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var r=dark?"dark":"light";var e=document.documentElement;e.dataset.theme=r;e.style.colorScheme=r;}catch(e){}})();`;
+const themeScript = `(function(){try{var m=document.cookie.match(/(?:^|;\\s*)gl-theme=(light|dark|system)\\b/);var p=m?m[1]:localStorage.getItem("gl-theme");var dark=p==="light"?false:p==="system"?window.matchMedia("(prefers-color-scheme: dark)").matches:true;var r=dark?"dark":"light";var e=document.documentElement;e.dataset.theme=r;e.style.colorScheme=r;}catch(e){}})();`;
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
-    <html lang="en" className={cn(inter.variable, fraunces.variable)} suppressHydrationWarning>
+    // Server-rendered as dark so even no-JS visitors start dark; the script
+    // above swaps in a stored light/system choice before first paint.
+    <html
+      lang="en"
+      data-theme="dark"
+      style={{ colorScheme: "dark" }}
+      className={cn(inter.variable, fraunces.variable)}
+      suppressHydrationWarning
+    >
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         {/* If JS never runs, scroll-reveal wrappers must not hide their content. */}

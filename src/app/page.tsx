@@ -65,8 +65,14 @@ export default async function HomePage() {
       logger.error({ err }, "landing: atlas data failed");
       return EMPTY_ATLAS;
     }),
-    searchJourneys(searchParamsSchema.parse({ sort: "recent", limit: "4" }), viewerId)
-      .then((r): JourneyCardDto[] => r.items)
+    // Recent journeys, with ones that have a photo first (stable within each
+    // group), so the editorial lead never opens on an empty image box.
+    searchJourneys(searchParamsSchema.parse({ sort: "recent", limit: "12" }), viewerId)
+      .then((r): JourneyCardDto[] =>
+        [...r.items]
+          .sort((a, b) => Number(!a.coverImageUrl) - Number(!b.coverImageUrl))
+          .slice(0, 4),
+      )
       .catch((err: unknown) => {
         logger.error({ err }, "landing: featured journeys failed");
         return null;

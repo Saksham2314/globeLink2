@@ -281,7 +281,9 @@ function DestinationList({
   onHoverItem: (id: string | null) => void;
 }) {
   return (
-    <div className="relative z-10 mt-2 lg:absolute lg:bottom-6 lg:left-0 lg:mt-0">
+    // Wide screens: one horizontally scrolling row along the bottom-left of the
+    // stage, kept clear of the preview panel's column on the right.
+    <div className="relative z-10 mt-2 lg:absolute lg:right-[25.5rem] lg:bottom-6 lg:left-0 lg:mt-0">
       <p
         id="atlas-list-label"
         className="text-muted text-[11px] font-semibold tracking-[0.16em] uppercase"
@@ -289,7 +291,10 @@ function DestinationList({
         On the globe
       </p>
       {destinations.length ? (
-        <ul aria-labelledby="atlas-list-label" className="mt-2.5 flex flex-wrap gap-2">
+        <ul
+          aria-labelledby="atlas-list-label"
+          className="mt-2.5 flex flex-wrap gap-2 lg:[scrollbar-width:none] lg:flex-nowrap lg:overflow-x-auto lg:[mask-image:linear-gradient(to_right,black_85%,transparent)] lg:pr-8 lg:pb-1"
+        >
           {destinations.map((d) => {
             const n = d.journeys.length;
             const active = selectedId === d.id;
@@ -309,7 +314,7 @@ function DestinationList({
                   onMouseEnter={() => onHoverItem(d.id)}
                   onMouseLeave={() => onHoverItem(null)}
                   className={cn(
-                    "inline-flex h-9 items-center gap-2 rounded-full border px-3.5 text-sm transition-colors",
+                    "inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-3.5 text-sm whitespace-nowrap transition-colors",
                     active
                       ? "border-gold-line bg-surface text-ink"
                       : "border-border-strong bg-surface/70 text-ink/90 hover:bg-surface hover:text-ink",

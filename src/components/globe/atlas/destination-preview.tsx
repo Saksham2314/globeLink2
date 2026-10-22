@@ -123,8 +123,9 @@ function JourneyMiniCard({
         className="absolute top-2.5 right-2.5 z-10 size-8"
       />
       <Link href={`/journeys/${j.slug}`} className="block">
-        <div className="bg-surface-muted relative aspect-[16/9] overflow-hidden">
-          {j.coverImageUrl ? (
+        {/* No photo → no empty image box; the card just stays compact. */}
+        {j.coverImageUrl ? (
+          <div className="bg-surface-muted relative aspect-[16/9] overflow-hidden">
             <Image
               src={j.coverImageUrl}
               alt=""
@@ -132,13 +133,9 @@ function JourneyMiniCard({
               sizes="(min-width: 1024px) 22rem, 100vw"
               className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
             />
-          ) : (
-            <div className="text-muted flex h-full items-center justify-center text-xs">
-              No photo yet
-            </div>
-          )}
-        </div>
-        <div className="space-y-1 p-3.5">
+          </div>
+        ) : null}
+        <div className={cn("space-y-1 p-3.5", !j.coverImageUrl && "pr-12")}>
           <h3 className="font-display text-ink group-hover:text-accent text-lg leading-snug transition-colors">
             {j.title}
           </h3>

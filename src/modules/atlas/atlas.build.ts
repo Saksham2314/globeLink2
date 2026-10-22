@@ -2,7 +2,8 @@ import type { AtlasArc, AtlasData, AtlasDestination, GeoPrecision } from "./atla
 import { normalizePlace, resolvePlace } from "./gazetteer";
 import { centralAngle } from "./geo";
 
-const MAX_ARCS = 8;
+/** Each arc is a few hundred vertices — cheap; this only guards a pathological feed. */
+const MAX_ARCS = 40;
 
 /** The fields `buildAtlasData` reads from each published journey. */
 export interface AtlasJourneyRow {

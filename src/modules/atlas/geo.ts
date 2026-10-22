@@ -76,7 +76,9 @@ export function greatCircleArc(
   const p1 = latLngToVec3(a.lat, a.lng);
   const p2 = latLngToVec3(b.lat, b.lng);
   const omega = centralAngle(a, b);
-  const lift = Math.min(0.32, Math.max(0.012, omega * 0.45));
+  // Gentle arch: tall enough to read as a route, low enough that a long one
+  // (Delhi → Tokyo) doesn't bulge past the horizon when seen side-on.
+  const lift = Math.min(0.16, Math.max(0.012, omega * 0.22));
   const sinOmega = Math.sin(omega);
   const out: Vec3[] = [];
   for (let i = 0; i <= segments; i++) {

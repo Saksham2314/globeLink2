@@ -300,6 +300,37 @@ const CLOUD_FRAG = /* glsl */ `
   }
 `;
 
+/**
+ * Arcs fade out over the far side of the planet. A long, high route (Delhi →
+ * Tokyo) otherwise pokes out past the horizon and projects as a loop.
+ */
+const ARC_VERT = /* glsl */ `
+  varying float vFacing;
+  void main() {
+    vec4 world = modelMatrix * vec4(position, 1.0);
+    // The globe is centred on the world origin, so the direction from the
+    // centre to this point is its outward normal.
+    vFacing = dot(normalize(world.xyz), normalize(cameraPosition));
+    gl_Position = projectionMatrix * viewMatrix * world;
+  }
+`;
+
+const ARC_FRAG = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uOpacity;
+  uniform float uHorizon;
+  varying float vFacing;
+  void main() {
+    // Seen from distance d, a unit sphere's horizon is at facing = 1/d (not 0).
+    // An arch at up to 16% altitude still projects past the edge until facing
+    // ≈ 0.5, so ease out before that band — routes fade as they near the edge
+    // instead of bulging past it.
+    float a = uOpacity * smoothstep(uHorizon + 0.25, uHorizon + 0.55, vFacing);
+    gl_FragColor = vec4(uColor, a);
+    #include <colorspace_fragment>
+  }
+`;
+
 const ATMOSPHERE_SCALE = 1.16;
 const CLOUD_SCALE = 1.014;
 /** Globe + atmosphere as a fraction of the stage's shorter side. */
@@ -335,7 +366,7 @@ interface MarkerView {
 interface ArcView {
   id: string;
   destinationId: string;
-  mesh: Mesh<TubeGeometry, MeshBasicMaterial>;
+  mesh: Mesh<TubeGeometry, ShaderMaterial>;
   indexCount: number;
 }
 
@@ -352,6 +383,8 @@ export class GlobeScene {
   private readonly stars: Points<BufferGeometry, PointsMaterial>;
   private readonly markers: MarkerView[] = [];
   private readonly arcs: ArcView[] = [];
+  /** Shared by every arc material; updated on resize (= 1 / camera distance). */
+  private readonly horizon = { value: 0.23 };
   private readonly raycaster = new Raycaster();
   private readonly pointerNdc = new Vector2();
   private readonly tmpV = new Vector3();
@@ -670,10 +703,15 @@ export class GlobeScene {
       geometry.setDrawRange(0, this.reducedMotion ? indexCount : 0);
       const mesh = new Mesh(
         geometry,
-        new MeshBasicMaterial({
-          color: "#ffffff",
+        new ShaderMaterial({
+          vertexShader: ARC_VERT,
+          fragmentShader: ARC_FRAG,
+          uniforms: {
+            uColor: { value: new Color("#ffffff") },
+            uOpacity: { value: 0.85 },
+            uHorizon: this.horizon,
+          },
           transparent: true,
-          opacity: 0.85,
           depthWrite: false,
         }),
       );
@@ -750,7 +788,7 @@ export class GlobeScene {
       m.dot.material.color.copy(this.markerColor);
       m.ring.material.color.copy(this.markerColor);
     }
-    for (const arc of this.arcs) arc.mesh.material.color.copy(this.arcColor);
+    for (const arc of this.arcs) arc.mesh.material.uniforms.uColor!.value.copy(this.arcColor);
   }
 
   private readonly tmpColor = new Color();
@@ -889,6 +927,7 @@ export class GlobeScene {
     const fitH = 1 / (fill * tanHalf);
     const fitW = 1 / (fill * tanHalf * this.camera.aspect);
     this.camera.position.set(0, 0, Math.max(fitH, fitW));
+    this.horizon.value = 1 / this.camera.position.z;
     this.camera.lookAt(0, 0, 0);
     this.camera.updateProjectionMatrix();
     this.kick();
@@ -1009,7 +1048,15 @@ export class GlobeScene {
     this.stars.rotation.y = this.yaw * 0.04;
 
     // Markers: staggered pop-in, emphasis for hover/focus/selection, soft pulse.
+    // They also fade out towards the horizon: a flat ring seen edge-on there
+    // stretches into a thin ellipse that reads as a glitch.
+    const globeQ = this.globe.getWorldQuaternion(this.tmpQ);
+    this.tmpV2.copy(this.camera.position).normalize();
     for (const m of this.markers) {
+      const facing = this.tmpV.copy(m.normal).applyQuaternion(globeQ).dot(this.tmpV2);
+      const h = this.horizon.value;
+      const edge = clamp01((facing - (h + 0.05)) / 0.25);
+      const fade = edge * edge * (3 - 2 * edge); // smoothstep
       const appear = reduced
         ? 1
         : clamp01((this.introT * INTRO_SECONDS - 0.45 - m.index * 0.12) / 0.45);
@@ -1026,14 +1073,14 @@ export class GlobeScene {
 
       if (reduced) {
         m.ring.scale.setScalar(1 + m.emphasis * 0.3);
-        m.ring.material.opacity = 0.55 + m.emphasis * 0.4;
+        m.ring.material.opacity = (0.55 + m.emphasis * 0.4) * fade;
       } else {
         const phase = (this.elapsed * 0.55 + m.index * 0.37) % 1;
         m.ring.scale.setScalar(1 + phase * 1.4 + m.emphasis * 0.3);
-        m.ring.material.opacity = (1 - phase) * 0.6 + m.emphasis * 0.35;
+        m.ring.material.opacity = ((1 - phase) * 0.6 + m.emphasis * 0.35) * fade;
         if (this.markers.length) moving = true;
       }
-      m.dot.material.opacity = 0.95;
+      m.dot.material.opacity = 0.95 * fade;
     }
 
     // Arcs draw in after the markers; the selected destination's arc stays bright.
@@ -1042,7 +1089,8 @@ export class GlobeScene {
       const count = Math.floor((arc.indexCount * easeOutCubic(arcProgress)) / 3) * 3;
       arc.mesh.geometry.setDrawRange(0, count);
       const dim = this.selectedId && this.selectedId !== arc.destinationId ? 0.25 : 0.85;
-      arc.mesh.material.opacity += (dim - arc.mesh.material.opacity) * (reduced ? 1 : damp(8, dt));
+      const op = arc.mesh.material.uniforms.uOpacity!;
+      op.value += (dim - op.value) * (reduced ? 1 : damp(8, dt));
     }
 
     return moving;

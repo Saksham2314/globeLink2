@@ -171,3 +171,42 @@ describe("buildAtlasData", () => {
     expect(arcs[0]!.destinationId).toBe("manali");
   });
 });
+
+describe("buildAtlasData arcs", () => {
+  it("draws every real route, not just the first few", () => {
+    const pairs: [string, string][] = [
+      ["Kochi", "Munnar"],
+      ["Delhi", "Manali"],
+      ["Delhi", "Kathmandu"],
+      ["Chennai", "Pondicherry"],
+      ["Delhi", "Leh"],
+      ["Kolkata", "Darjeeling"],
+      ["Delhi", "Jaipur"],
+      ["Bengaluru", "Coorg"],
+      ["Mumbai", "Goa"],
+      ["Delhi", "Rishikesh"],
+      ["Delhi", "Tokyo"],
+      ["Chandigarh", "Manali"],
+    ];
+    const rows = pairs.map(([from, to], i) => ({
+      id: String(i),
+      slug: `s${i}`,
+      title: `t${i}`,
+      summary: null,
+      originName: from,
+      destinationName: to,
+      country: null,
+      lat: null,
+      lng: null,
+      durationDays: null,
+      budgetAmount: null,
+      budgetCurrency: "INR",
+      images: [],
+      days: [],
+      author: { name: "A", handle: "a" },
+    }));
+    const { arcs } = buildAtlasData(rows);
+    expect(arcs).toHaveLength(pairs.length);
+    expect(arcs.map((a) => `${a.from.name}>${a.to.name}`)).toContain("Delhi>Tokyo");
+  });
+});

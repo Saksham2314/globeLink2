@@ -72,7 +72,13 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       suppressHydrationWarning
     >
       <head>
-        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* Browsers hide a nonce's value from the DOM after parsing (a CSP
+            safeguard), so the hydrated `nonce=""` never matches the server. */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+        />
         {/* If JS never runs, scroll-reveal wrappers must not hide their content. */}
         <noscript>
           <style

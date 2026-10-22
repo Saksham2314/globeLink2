@@ -6,6 +6,7 @@ import type { UIMessage } from "ai";
 import { Markdown } from "@/components/ui/markdown";
 import { cn } from "@/lib/utils";
 
+import { readableError } from "./chat-error";
 import { ConfirmationCard } from "./confirmation-card";
 import { CONFIRM_TOOL_NAMES, isTextPart, isToolPart, toolNameOf } from "./parts";
 import { quotableText, splitReply, type QuotedReply } from "./reply";
@@ -84,6 +85,7 @@ export function AssistantConversation({
                       part={part}
                       sessionId={sessionId}
                       messageId={message.id}
+                      streaming={busy}
                       onResolved={onToolResolved}
                     />
                   ) : (
@@ -116,7 +118,7 @@ export function AssistantConversation({
 
       {error ? (
         <p className="border-danger/40 bg-danger-soft text-danger rounded-md border px-3 py-2 text-sm">
-          {error.message || "Something went wrong. Try again."}
+          {readableError(error)}
         </p>
       ) : null}
 

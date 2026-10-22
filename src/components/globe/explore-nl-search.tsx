@@ -19,6 +19,7 @@ export function ExploreNlSearch({ enabled }: { enabled: boolean }) {
   const pathname = usePathname();
   const [text, setText] = useState("");
   const [note, setNote] = useState<string | null>(null);
+  const [relaxed, setRelaxed] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
   function apply(params: Record<string, string>) {
@@ -32,6 +33,7 @@ export function ExploreNlSearch({ enabled }: { enabled: boolean }) {
     start(async () => {
       const res = await interpretSearchAction(t);
       setNote(res.interpreted ? res.note : null);
+      setRelaxed(res.interpreted ? res.relaxed : null);
       apply(res.params);
     });
   }
@@ -69,11 +71,18 @@ export function ExploreNlSearch({ enabled }: { enabled: boolean }) {
             className="text-accent hover:underline"
             onClick={() => {
               setNote(null);
+              setRelaxed(null);
               apply({ q: text.trim() });
             }}
           >
             search exact text instead
           </button>
+          {relaxed ? (
+            <span className="block">
+              Nothing matched all of that, so these are shown without{" "}
+              <span className="text-ink font-medium">{relaxed}</span>.
+            </span>
+          ) : null}
         </p>
       ) : enabled ? (
         <p className="text-muted mt-2 text-xs">

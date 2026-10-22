@@ -33,6 +33,14 @@ describe("input validation", () => {
     expect(createItineraryTool.inputSchema.safeParse({ title: "Kyoto" }).success).toBe(true);
   });
 
+  it("createItinerary needs a title unless it forks a journey", () => {
+    expect(createItineraryTool.inputSchema.safeParse({}).success).toBe(false);
+    expect(
+      createItineraryTool.inputSchema.safeParse({ fromJourneySlug: "cusco-and-machu-picchu" })
+        .success,
+    ).toBe(true);
+  });
+
   it("sendMessage needs a body and a target", () => {
     expect(sendMessageTool.inputSchema.safeParse({ body: "hi" }).success).toBe(false);
     expect(

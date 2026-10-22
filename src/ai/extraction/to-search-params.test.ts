@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { EMPTY_CONSTRAINTS } from "./constraints.schema";
-import { summarizeConstraints, travelConstraintsToSearchParams } from "./to-search-params";
+import {
+  describeRelaxed,
+  relaxationLadder,
+  summarizeConstraints,
+  travelConstraintsToSearchParams,
+} from "./to-search-params";
 
 const c = (over: Partial<typeof EMPTY_CONSTRAINTS>) => ({ ...EMPTY_CONSTRAINTS, ...over });
 
@@ -30,6 +35,45 @@ describe("travelConstraintsToSearchParams", () => {
 
   it("does not map month in Phase 6", () => {
     expect(travelConstraintsToSearchParams(c({ month: "april" }))).toEqual({});
+  });
+});
+
+describe("relaxationLadder", () => {
+  it("drops styles, then trip length, then budget — never the destination", () => {
+    const steps = relaxationLadder({
+      destination: "Lisbon",
+      maxDays: "6",
+      maxBudget: "150000",
+      styles: "slow",
+    });
+    expect(steps).toEqual([
+      {
+        params: { destination: "Lisbon", maxDays: "6", maxBudget: "150000" },
+        dropped: ["styles"],
+      },
+      { params: { destination: "Lisbon", maxBudget: "150000" }, dropped: ["styles", "maxDays"] },
+      { params: { destination: "Lisbon" }, dropped: ["styles", "maxDays", "maxBudget"] },
+    ]);
+  });
+
+  it("skips filters that are not set", () => {
+    expect(relaxationLadder({ destination: "Bali", maxDays: "7" })).toEqual([
+      { params: { destination: "Bali" }, dropped: ["maxDays"] },
+    ]);
+  });
+
+  it("has nothing to loosen for destination or text alone", () => {
+    expect(relaxationLadder({ destination: "Kyoto" })).toEqual([]);
+    expect(relaxationLadder({ q: "Rajasthan" })).toEqual([]);
+  });
+});
+
+describe("describeRelaxed", () => {
+  const k = c({ durationDays: 6, maxBudget: 150000, currency: "INR", styles: ["slow", "city"] });
+  it("labels each dropped filter", () => {
+    expect(describeRelaxed("styles", k)).toBe("slow, city");
+    expect(describeRelaxed("maxDays", k)).toBe("≤ 6 days");
+    expect(describeRelaxed("maxBudget", k)).toBe("under ₹1,50,000");
   });
 });
 

@@ -52,6 +52,12 @@ export const searchParamsSchema = z.object({
       const s = v?.trim();
       return s ? s.slice(0, 120) : undefined;
     }),
+  /** "all" (default): every word of `q` must match. "any": at least one —
+   *  the fallback for descriptive phrases, still ranked by best match. */
+  match: z
+    .string()
+    .optional()
+    .transform((v): "all" | "any" => (v === "any" ? "any" : "all")),
   destination: optionalText,
   country: optionalText,
   /** Major currency units in the URL; the service converts to minor units. */

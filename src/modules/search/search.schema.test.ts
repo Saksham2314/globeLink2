@@ -40,6 +40,12 @@ describe("searchParamsSchema", () => {
     expect(parse({ limit: "0" }).limit).toBe(DEFAULT_LIMIT);
   });
 
+  it("matches every word unless 'any' is asked for", () => {
+    expect(parse({}).match).toBe("all");
+    expect(parse({ match: "any" }).match).toBe("any");
+    expect(parse({ match: "most" }).match).toBe("all");
+  });
+
   it("reports active filters", () => {
     expect(hasActiveFilters(parse({ q: "goa" }))).toBe(true);
     expect(hasActiveFilters(parse({ styles: "solo" }))).toBe(true);

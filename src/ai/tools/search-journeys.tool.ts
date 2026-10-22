@@ -16,7 +16,13 @@ const input = z
       .max(120)
       .optional()
       .describe("Free text — matched against title, summary and description."),
-    destination: z.string().trim().min(1).max(80).optional().describe("City or place name."),
+    destination: z
+      .string()
+      .trim()
+      .min(1)
+      .max(80)
+      .optional()
+      .describe("City, region or country — matched against all three."),
     country: z.string().trim().min(1).max(80).optional(),
     maxBudget: z
       .number()
@@ -73,11 +79,21 @@ export const searchJourneysTool = defineTool({
       limit: (args.limit ?? 10).toString(),
     });
 
-    const { items, nextCursor } = await searchJourneys(params, ctx.userId ?? undefined);
+    let result = await searchJourneys(params, ctx.userId ?? undefined);
+    // A descriptive query rarely has every word in one write-up; when it
+    // matches nothing, accept journeys that match some of it (best first).
+    let matchedAnyWord = false;
+    if (result.items.length === 0 && params.q && params.q.trim().includes(" ")) {
+      result = await searchJourneys({ ...params, match: "any" }, ctx.userId ?? undefined);
+      matchedAnyWord = result.items.length > 0;
+    }
     return {
-      count: items.length,
-      hasMore: Boolean(nextCursor),
-      journeys: items.map(toToolJourneyCard),
+      count: result.items.length,
+      hasMore: Boolean(result.nextCursor),
+      ...(matchedAnyWord
+        ? { note: "No journey matched every word; these match some of them." }
+        : {}),
+      journeys: result.items.map(toToolJourneyCard),
     };
   },
 });

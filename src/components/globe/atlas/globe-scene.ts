@@ -398,6 +398,7 @@ export class GlobeScene {
   private readonly tmpV = new Vector3();
   private readonly tmpV2 = new Vector3();
   private readonly labelPos = new Vector3();
+  private readonly pickPos = new Vector3();
   private readonly tmpQ = new Quaternion();
   private texture: Texture | null = null;
 
@@ -904,12 +905,18 @@ export class GlobeScene {
       this.markers.map((m) => m.hit),
       false,
     );
+    // Hit areas of nearby places (Lisbon, Marrakech) overlap, so take the
+    // marker whose centre is closest to the pointer ray, not the first hit.
+    let best: string | null = null;
+    let bestDist = Infinity;
     for (const hit of hits) {
       const id = hit.object.userData.markerId as string;
       const marker = this.markers.find((m) => m.id === id)!;
-      if (this.isFacing(marker, this.horizon.value + MARKER_VISIBLE_MARGIN)) return id;
+      if (!this.isFacing(marker, this.horizon.value + MARKER_VISIBLE_MARGIN)) continue;
+      const d = this.raycaster.ray.distanceSqToPoint(hit.object.getWorldPosition(this.pickPos));
+      if (d < bestDist) [best, bestDist] = [id, d];
     }
-    return null;
+    return best;
   }
 
   private setHover(id: string | null) {
@@ -1081,6 +1088,9 @@ export class GlobeScene {
       m.emphasis += (want - m.emphasis) * (reduced ? 1 : damp(10, dt));
       if (Math.abs(want - m.emphasis) > 0.002) moving = true;
       m.group.scale.setScalar(pop * (1 + m.emphasis * 0.55));
+      // The dot grows when emphasised, but its hit area must not — otherwise a
+      // hovered marker swallows a close neighbour (Marrakech over Lisbon).
+      m.hit.scale.setScalar(1 / (1 + m.emphasis * 0.55));
 
       if (reduced) {
         m.ring.scale.setScalar(1 + m.emphasis * 0.3);

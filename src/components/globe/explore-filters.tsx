@@ -32,12 +32,27 @@ export function ExploreFilters() {
   const [maxBudget, setMaxBudget] = useState(sp.get("maxBudget") ?? "");
   const [maxDays, setMaxDays] = useState(sp.get("maxDays") ?? "");
 
+  // When the URL changes from outside this form (plain-language search, back/
+  // forward), show its values — otherwise the boxes look empty and a later
+  // "Apply" would silently wipe the filters that are actually in effect.
+  const spKey = sp.toString();
+  const [syncedKey, setSyncedKey] = useState(spKey);
+  if (syncedKey !== spKey) {
+    setSyncedKey(spKey);
+    setQ(sp.get("q") ?? "");
+    setDestination(sp.get("destination") ?? "");
+    setMaxBudget(sp.get("maxBudget") ?? "");
+    setMaxDays(sp.get("maxDays") ?? "");
+  }
+
   const activeStyles = new Set((sp.get("styles") ?? "").split(",").filter(Boolean));
   const activeTransport = new Set((sp.get("transport") ?? "").split(",").filter(Boolean));
 
   function commit(next: Record<string, string | string[] | undefined>) {
     const params = new URLSearchParams(sp.toString());
     params.delete("cursor");
+    // Text typed by hand goes back to matching every word.
+    if ("q" in next && next.q !== sp.get("q")) params.delete("match");
     for (const [key, value] of Object.entries(next)) {
       const v = Array.isArray(value) ? value.join(",") : value;
       if (v && v.length) params.set(key, v);

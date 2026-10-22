@@ -29,15 +29,27 @@ export async function searchJourneys(
   // "relevance" only means anything with a text query; otherwise → recent.
   const sort: SortKey = params.sort === "relevance" && !q ? "recent" : params.sort;
 
-  const tsquery = q ? Prisma.sql`websearch_to_tsquery('english', ${q})` : null;
+  // "any" turns the AND between words into OR, so a descriptive phrase
+  // ("mountain views") still finds journeys that mention only some of it.
+  const tsquery = !q
+    ? null
+    : params.match === "any"
+      ? Prisma.sql`replace(websearch_to_tsquery('english', ${q})::text, ' & ', ' | ')::tsquery`
+      : Prisma.sql`websearch_to_tsquery('english', ${q})`;
 
   const where: Prisma.Sql[] = [
     Prisma.sql`j."status" = 'PUBLISHED'`,
     Prisma.sql`j."deletedAt" IS NULL`,
   ];
   if (tsquery) where.push(Prisma.sql`j."searchVector" @@ ${tsquery}`);
-  if (params.destination)
-    where.push(Prisma.sql`j."destinationName" ILIKE ${`%${params.destination}%`}`);
+  // A destination can be a city ("Lisbon") or a region/country ("Portugal"), so
+  // it matches any of the three place fields.
+  if (params.destination) {
+    const place = `%${params.destination}%`;
+    where.push(
+      Prisma.sql`(j."destinationName" ILIKE ${place} OR j."country" ILIKE ${place} OR j."region" ILIKE ${place})`,
+    );
+  }
   if (params.country) where.push(Prisma.sql`j."country" ILIKE ${`%${params.country}%`}`);
   if (params.maxBudget)
     where.push(

@@ -27,6 +27,39 @@ export function travelConstraintsToSearchParams(c: TravelConstraints): Record<st
   return params;
 }
 
+/** The filters that may be loosened when an interpretation matches nothing,
+ *  softest first. Destination and free text are never dropped. */
+export const RELAXABLE_PARAMS = ["styles", "maxDays", "maxBudget"] as const;
+export type RelaxableParam = (typeof RELAXABLE_PARAMS)[number];
+
+/**
+ * Progressively looser versions of `params`: drop styles, then also trip
+ * length, then also budget. Only steps that actually remove something are
+ * returned, each with the keys it dropped.
+ */
+export function relaxationLadder(
+  params: Record<string, string>,
+): { params: Record<string, string>; dropped: RelaxableParam[] }[] {
+  const steps: { params: Record<string, string>; dropped: RelaxableParam[] }[] = [];
+  const dropped: RelaxableParam[] = [];
+  let current = params;
+  for (const key of RELAXABLE_PARAMS) {
+    if (!(key in current)) continue;
+    current = { ...current };
+    delete current[key];
+    dropped.push(key);
+    steps.push({ params: current, dropped: [...dropped] });
+  }
+  return steps;
+}
+
+/** Human-readable label for a dropped filter, e.g. "≤ 6 days". */
+export function describeRelaxed(key: RelaxableParam, c: TravelConstraints): string {
+  if (key === "styles") return c.styles.join(", ");
+  if (key === "maxDays") return `≤ ${c.durationDays} day${c.durationDays === 1 ? "" : "s"}`;
+  return `under ${formatMoney((c.maxBudget ?? 0) * 100, c.currency ?? "INR") ?? `${c.maxBudget}`}`;
+}
+
 /** One-line, human-readable summary of what was understood — shown under the
  *  search box so the interpretation is transparent. */
 export function summarizeConstraints(c: TravelConstraints): string {

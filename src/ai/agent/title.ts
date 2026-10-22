@@ -20,13 +20,29 @@ export async function generateSessionTitle(firstUserText: string): Promise<strin
       prompt: seed,
       temperature: 0.2,
     });
-    const title = text
-      .trim()
-      .replace(/^["'\s]+|["'\s.]+$/g, "")
-      .slice(0, 80);
-    return title.length >= 3 ? title : null;
+    return cleanSessionTitle(text);
   } catch (err) {
     logger.warn({ err }, "session title generation failed");
     return null;
   }
+}
+
+/**
+ * Small models sometimes answer with markdown or keep talking ("# Cusco
+ * Planner\n\nHere's a suggested itinerary…"). Keep the first non-empty line,
+ * strip markdown/labels/quotes, and cap it at 8 words.
+ */
+export function cleanSessionTitle(raw: string): string | null {
+  const line = raw.split("\n").find((l) => l.trim()) ?? "";
+  const title = line
+    .replace(/^\s*(#+|[-*>]|\d+[.)])\s*/, "")
+    .replace(/[*_`]/g, "")
+    .replace(/^\s*title\s*:\s*/i, "")
+    .replace(/^["'“”‘’\s]+|["'“”‘’\s.:!]+$/g, "")
+    .split(/\s+/)
+    .slice(0, 8)
+    .join(" ")
+    .slice(0, 80)
+    .trim();
+  return title.length >= 3 ? title : null;
 }

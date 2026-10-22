@@ -28,7 +28,15 @@ const dayInput = z.object({
 
 const input = z
   .object({
-    title: z.string().trim().min(2).max(120).describe("A name for the itinerary."),
+    title: z
+      .string()
+      .trim()
+      .min(2)
+      .max(120)
+      .optional()
+      .describe(
+        "A name for the itinerary. Required unless forking — a fork takes the journey's title.",
+      ),
     fromJourneySlug: z
       .string()
       .trim()
@@ -45,7 +53,11 @@ const input = z
       .optional()
       .describe("An optional day-by-day plan to start with."),
   })
-  .strict();
+  .strict()
+  .refine((v) => v.title || v.fromJourneySlug, {
+    message: "Give the itinerary a title (or fork a journey).",
+    path: ["title"],
+  });
 
 export const createItineraryTool = defineTool({
   name: "createItinerary",
@@ -63,7 +75,7 @@ export const createItineraryTool = defineTool({
     });
 
     let itineraryId: string;
-    let title = args.title;
+    let title = args.title ?? "";
 
     if (args.fromJourneySlug) {
       const journey = await getPublishedJourneyRef(args.fromJourneySlug);
@@ -72,7 +84,7 @@ export const createItineraryTool = defineTool({
       title = journey.title;
     } else {
       ({ id: itineraryId } = await createItinerary(ctx.userId, {
-        title: args.title,
+        title,
         destinationName: args.destination ?? null,
       }));
       if (args.days?.length) {

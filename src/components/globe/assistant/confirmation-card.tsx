@@ -13,13 +13,17 @@ interface Props {
   part: ToolPart;
   sessionId: string;
   messageId: string;
+  /** The reply is still streaming. Its message isn't saved until the stream
+   *  ends, and the final chunk would overwrite a result added now — so the
+   *  buttons wait for it (well under a second after the card appears). */
+  streaming: boolean;
   /** Feed the outcome back into the chat so the transcript is complete. */
   onResolved: (args: { toolName: string; toolCallId: string; output: unknown }) => void;
 }
 
 type Local = "idle" | "working" | "error";
 
-export function ConfirmationCard({ part, sessionId, messageId, onResolved }: Props) {
+export function ConfirmationCard({ part, sessionId, messageId, streaming, onResolved }: Props) {
   const name = toolNameOf(part);
   const input = (part.input ?? {}) as Record<string, unknown>;
   const [local, setLocal] = useState<Local>("idle");
@@ -103,12 +107,17 @@ export function ConfirmationCard({ part, sessionId, messageId, onResolved }: Pro
         <Button
           size="sm"
           onClick={confirm}
-          disabled={local === "working"}
+          disabled={local === "working" || streaming}
           aria-busy={local === "working"}
         >
           {local === "working" ? "Working…" : "Confirm"}
         </Button>
-        <Button size="sm" variant="ghost" onClick={cancel} disabled={local === "working"}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={cancel}
+          disabled={local === "working" || streaming}
+        >
           Cancel
         </Button>
       </div>
@@ -174,10 +183,14 @@ function preview(name: string, input: Record<string, unknown>): React.ReactNode 
     const days = Array.isArray(input.days) ? input.days.length : 0;
     return (
       <>
-        <p>
-          Title: <span className="text-ink">{String(input.title ?? "")}</span>
-        </p>
-        {input.fromJourneySlug ? <p>Forked from a published journey.</p> : null}
+        {input.title ? (
+          <p>
+            Title: <span className="text-ink">{String(input.title)}</span>
+          </p>
+        ) : null}
+        {input.fromJourneySlug ? (
+          <p>Copied from a published journey — its title and day-by-day plan.</p>
+        ) : null}
         {input.destination ? <p>Destination: {String(input.destination)}</p> : null}
         {days ? (
           <p>

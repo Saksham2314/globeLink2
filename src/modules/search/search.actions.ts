@@ -4,6 +4,8 @@ import { hasAnyConstraint } from "@/ai/extraction/constraints.schema";
 import { extractTravelConstraints } from "@/ai/extraction/extract-constraints";
 import { looksLikeNaturalLanguageQuery } from "@/ai/extraction/heuristic";
 import {
+  describeRelaxed,
+  relaxationLadder,
   summarizeConstraints,
   travelConstraintsToSearchParams,
 } from "@/ai/extraction/to-search-params";
@@ -38,6 +40,8 @@ export interface InterpretResult {
   interpreted: boolean;
   /** One-line summary of what was understood, when `interpreted`. */
   note: string | null;
+  /** Understood filters left out because, together, they matched nothing. */
+  relaxed: string | null;
 }
 
 /**
@@ -50,17 +54,73 @@ export interface InterpretResult {
  */
 export async function interpretSearchAction(text: string): Promise<InterpretResult> {
   const raw = text.trim().slice(0, 200);
-  if (!raw) return { params: {}, interpreted: false, note: null };
+  if (!raw) return { params: {}, interpreted: false, note: null, relaxed: null };
 
-  const textSearch: InterpretResult = { params: { q: raw }, interpreted: false, note: null };
+  const textSearch: InterpretResult = {
+    params: { q: raw },
+    interpreted: false,
+    note: null,
+    relaxed: null,
+  };
 
   if (!looksLikeNaturalLanguageQuery(raw)) return textSearch;
 
   const outcome = await extractTravelConstraints(raw);
-  if (!outcome || !hasAnyConstraint(outcome.constraints)) return textSearch;
+  if (!outcome || !hasAnyConstraint(outcome.constraints)) return withAnyWordFallback(textSearch);
 
   const params = travelConstraintsToSearchParams(outcome.constraints);
-  if (Object.keys(params).length === 0) return textSearch;
+  if (Object.keys(params).length === 0) return withAnyWordFallback(textSearch);
 
-  return { params, interpreted: true, note: summarizeConstraints(outcome.constraints) || null };
+  const note = summarizeConstraints(outcome.constraints) || null;
+  const relaxedStep = await firstMatchingRelaxation(params);
+  if (!relaxedStep) return { params, interpreted: true, note, relaxed: null };
+
+  return {
+    params: relaxedStep.params,
+    interpreted: true,
+    note,
+    relaxed:
+      relaxedStep.dropped.map((k) => describeRelaxed(k, outcome.constraints)).join(" · ") || null,
+  };
+}
+
+const hasResults = async (p: Record<string, string>) =>
+  (await searchJourneys(searchParamsSchema.parse({ ...p, limit: "1" }))).items.length > 0;
+
+/**
+ * A whole sentence sent as plain text search must match every word, which
+ * almost never happens (e.g. when the model is unavailable). If it matches
+ * nothing, match any of its words instead — still ranked by best match.
+ */
+async function withAnyWordFallback(result: InterpretResult): Promise<InterpretResult> {
+  try {
+    if (await hasResults(result.params)) return result;
+    const any = { ...result.params, match: "any" };
+    if (await hasResults(any)) return { ...result, params: any };
+  } catch (error) {
+    logger.warn({ err: error }, "any-word search fallback failed; keeping exact text search");
+  }
+  return result;
+}
+
+/**
+ * When every understood filter together matches nothing, find the least
+ * loosening (styles, then length, then budget) that returns something. Null
+ * when the exact interpretation already matches, or nothing helps — then the
+ * user sees the honest empty state.
+ */
+async function firstMatchingRelaxation(params: Record<string, string>) {
+  try {
+    if (await hasResults(params)) return null;
+    // A region sent as text ("East Africa") may only partly match.
+    if (params.q?.includes(" ") && (await hasResults({ ...params, match: "any" }))) {
+      return { params: { ...params, match: "any" }, dropped: [] };
+    }
+    for (const step of relaxationLadder(params)) {
+      if (await hasResults(step.params)) return step;
+    }
+  } catch (error) {
+    logger.warn({ err: error }, "search relaxation failed; keeping exact interpretation");
+  }
+  return null;
 }

@@ -50,7 +50,7 @@ export async function resolveToolCallInMessage(
   toolCallId: string,
   output: unknown,
 ): Promise<void> {
-  const message = await db.agentMessage.findFirst({ where: { id: messageId, sessionId } });
+  const message = await findToolCallMessage(sessionId, messageId, toolCallId);
   if (!message) return;
 
   const parts = Array.isArray(message.parts) ? (message.parts as Record<string, unknown>[]) : [];
@@ -65,7 +65,42 @@ export async function resolveToolCallInMessage(
   if (!hit) return;
 
   await db.agentMessage.update({
-    where: { id: messageId },
+    where: { id: message.id },
     data: { parts: next as unknown as Prisma.InputJsonValue },
   });
+}
+
+/** Has this stored tool call already been confirmed or cancelled? Used to stop
+ *  the same proposal from running twice (double click, stale tab, reload). */
+export async function isToolCallResolved(
+  sessionId: string,
+  messageId: string,
+  toolCallId: string,
+): Promise<boolean> {
+  const message = await findToolCallMessage(sessionId, messageId, toolCallId);
+  return Boolean(message && toolCallPart(message.parts, toolCallId)?.state === "output-available");
+}
+
+/**
+ * In a live chat the client only knows the streamed message's id, while the
+ * stored row got its own on insert — so fall back to finding the message by its
+ * (unique) tool call id among the session's recent assistant messages.
+ */
+async function findToolCallMessage(sessionId: string, messageId: string, toolCallId: string) {
+  const byId = await db.agentMessage.findFirst({ where: { id: messageId, sessionId } });
+  if (byId && toolCallPart(byId.parts, toolCallId)) return byId;
+  const recent = await db.agentMessage.findMany({
+    where: { sessionId, role: "ASSISTANT" },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+  return recent.find((m) => toolCallPart(m.parts, toolCallId)) ?? null;
+}
+
+function toolCallPart(parts: Prisma.JsonValue, toolCallId: string) {
+  if (!Array.isArray(parts)) return undefined;
+  return parts.find(
+    (p): p is Prisma.JsonObject =>
+      typeof p === "object" && p !== null && !Array.isArray(p) && p.toolCallId === toolCallId,
+  );
 }

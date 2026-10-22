@@ -9,7 +9,7 @@ import { AppError, isAppError } from "@/lib/errors";
 import { firstErrors, type FormState } from "@/lib/forms";
 import { logger } from "@/lib/logger";
 
-import { resolveToolCallInMessage } from "./agent-message.service";
+import { isToolCallResolved, resolveToolCallInMessage } from "./agent-message.service";
 import {
   createSession,
   deleteSession,
@@ -114,6 +114,14 @@ export async function confirmMutationAction(args: ConfirmArgs): Promise<ConfirmM
   const tool = getTool(args.toolName);
   if (!tool) return { ok: false, output: { status: "error" }, error: "Unknown action." };
 
+  if (await isToolCallResolved(args.sessionId, args.messageId, args.toolCallId)) {
+    return {
+      ok: false,
+      output: { status: "error", error: "This was already confirmed or cancelled." },
+      error: "This was already confirmed or cancelled.",
+    };
+  }
+
   const result = await tool.execute(args.input, { userId, sessionId: args.sessionId });
 
   if (!result.ok) {
@@ -179,6 +187,7 @@ export async function cancelMutationAction(args: {
     if (isAppError(err)) return;
     throw err;
   }
+  if (await isToolCallResolved(args.sessionId, args.messageId, args.toolCallId)) return;
   await resolveToolCallInMessage(args.sessionId, args.messageId, args.toolCallId, {
     status: "cancelled",
   });

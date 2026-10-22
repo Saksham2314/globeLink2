@@ -1,4 +1,12 @@
-/** Display helpers — pure, usable on server or client. */
+/**
+ * Display helpers — pure, usable on server or client.
+ *
+ * Every helper formats with one fixed locale. With the visitor's own locale
+ * the server (Vercel) and the browser could disagree — e.g. "₹1,40,000" vs
+ * "₹140,000" — which breaks hydration (React error #418) and flips text after
+ * load. en-IN matches the app's ₹ budgets.
+ */
+export const DISPLAY_LOCALE = "en-IN";
 
 /** Integer minor units + ISO code → localized currency string. */
 export function formatMoney(
@@ -7,17 +15,19 @@ export function formatMoney(
 ): string | null {
   if (minorUnits == null) return null;
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(DISPLAY_LOCALE, {
       style: "currency",
       currency,
       maximumFractionDigits: minorUnits % 100 === 0 ? 0 : 2,
     }).format(minorUnits / 100);
   } catch {
-    return `${(minorUnits / 100).toLocaleString()} ${currency}`;
+    return `${(minorUnits / 100).toLocaleString(DISPLAY_LOCALE)} ${currency}`;
   }
 }
 
-/** "12–18 Mar 2026", "Mar 2026", or null. */
+/** "12–18 Mar 2026", "Mar 2026", or null. Journey dates are calendar days
+ *  stored as UTC midnight, so they're shown in UTC — the same day for every
+ *  visitor, wherever they are. */
 export function formatDateRange(
   start: string | Date | null | undefined,
   end: string | Date | null | undefined,
@@ -27,7 +37,8 @@ export function formatDateRange(
   if (!s && !e) return null;
 
   const d = (date: Date, withYear = true) =>
-    date.toLocaleDateString(undefined, {
+    date.toLocaleDateString(DISPLAY_LOCALE, {
+      timeZone: "UTC",
       day: "numeric",
       month: "short",
       ...(withYear ? { year: "numeric" } : {}),
@@ -54,7 +65,7 @@ export function formatTimeAgo(input: string | Date): string {
   if (secs < 3600) return `${Math.round(secs / 60)}m`;
   if (secs < 86400) return `${Math.round(secs / 3600)}h`;
   if (secs < 604800) return `${Math.round(secs / 86400)}d`;
-  return new Date(input).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  return new Date(input).toLocaleDateString(DISPLAY_LOCALE, { day: "numeric", month: "short" });
 }
 
 /** "Today" / "Yesterday" / "Mon, 3 Mar" — for date separators in a chat log. */
@@ -65,7 +76,7 @@ export function formatDayLabel(input: string | Date): string {
   const diffDays = Math.round((startOf(today) - startOf(d)) / 86400000);
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Yesterday";
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString(DISPLAY_LOCALE, {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -75,5 +86,5 @@ export function formatDayLabel(input: string | Date): string {
 
 /** "09:34" clock time for a single message. */
 export function formatClock(input: string | Date): string {
-  return new Date(input).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return new Date(input).toLocaleTimeString(DISPLAY_LOCALE, { hour: "2-digit", minute: "2-digit" });
 }

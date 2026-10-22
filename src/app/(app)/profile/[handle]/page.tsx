@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { JourneyCard } from "@/components/globe/journey-card";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
+import { DISPLAY_LOCALE } from "@/lib/format";
 import { listByAuthorHandle } from "@/modules/journeys/journey.service";
 import { getCurrentUser, getPublicProfileByHandle } from "@/modules/users/user.service";
 
@@ -35,7 +36,7 @@ export default async function ProfilePage({ params }: Params) {
 
   const { preferences } = profile;
   const initial = (profile.name ?? profile.handle).trim().charAt(0).toUpperCase() || "?";
-  const memberSince = new Date(profile.memberSince).toLocaleDateString(undefined, {
+  const memberSince = new Date(profile.memberSince).toLocaleDateString(DISPLAY_LOCALE, {
     month: "long",
     year: "numeric",
   });

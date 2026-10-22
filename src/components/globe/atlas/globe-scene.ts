@@ -36,6 +36,8 @@ import {
   wrapAngle,
 } from "@/modules/atlas/geo";
 
+import { markerAppear } from "./intro-timing";
+
 /**
  * The landing-page globe, as a self-contained imperative three.js scene.
  * React owns *what* is selected/highlighted; this class owns every frame.
@@ -104,7 +106,7 @@ const PALETTES: Record<GlobeTheme, Palette> = {
     oceanShallow: "#0e3443",
     land: "#183a44",
     landHi: "#2f5960",
-    ice: "#b7cad0",
+    ice: "#8fa7b0",
     border: "#5d8a93",
     coast: "#86c7d4",
     grid: "#1f4652",
@@ -338,7 +340,13 @@ const STAGE_FILL = 0.92;
 /** Axial tilt, so the planet reads as a planet — north leans right. */
 const AXIAL_TILT = -0.3;
 const MARKER_LIFT = 1.004;
-const BASE_PITCH = 0.32;
+const BASE_PITCH = 0.15;
+/**
+ * A marker counts as on the visible side once its outward normal faces the
+ * camera by this much past the horizon. Drawing (fade), the label and the
+ * click target all use it, so nothing is shown that can't be clicked.
+ */
+const MARKER_VISIBLE_MARGIN = 0.15;
 const AMBIENT_SPEED = 0.045; // rad/s — a slow, ambient turn
 const INTRO_SECONDS = 1.25;
 
@@ -582,9 +590,12 @@ export class GlobeScene {
     }
     if (!id && this.selectedId) {
       // Return to ambient from wherever the globe now points — no jump.
-      this.ambientYaw = this.yaw;
+      // Resume exactly where the globe now points (net of the cursor offset),
+      // instead of drifting back to the resting tilt — which carried southern
+      // places down to the edge, out of reach.
+      this.ambientYaw = this.yaw - this.trackX * 0.32;
       this.dragYaw = 0;
-      this.dragPitch = 0;
+      this.dragPitch = this.pitch - BASE_PITCH - this.trackY * 0.14;
       this.dragVelocity = 0;
     }
     this.selectedId = id;
@@ -834,7 +845,7 @@ export class GlobeScene {
         const step = dx * 0.0055;
         this.dragYaw += step;
         this.dragVelocity = step * 60;
-        this.dragPitch = Math.max(-0.45, Math.min(0.45, this.dragPitch + dy * 0.003));
+        this.dragPitch = Math.max(-1.1, Math.min(1.1, this.dragPitch + dy * 0.003));
         this.kick();
         return;
       }
@@ -895,7 +906,8 @@ export class GlobeScene {
     );
     for (const hit of hits) {
       const id = hit.object.userData.markerId as string;
-      if (this.isFacing(this.markers.find((m) => m.id === id)!)) return id;
+      const marker = this.markers.find((m) => m.id === id)!;
+      if (this.isFacing(marker, this.horizon.value + MARKER_VISIBLE_MARGIN)) return id;
     }
     return null;
   }
@@ -1055,11 +1067,10 @@ export class GlobeScene {
     for (const m of this.markers) {
       const facing = this.tmpV.copy(m.normal).applyQuaternion(globeQ).dot(this.tmpV2);
       const h = this.horizon.value;
-      const edge = clamp01((facing - (h + 0.05)) / 0.25);
+      // Fully drawn by the visibility margin, gone at the horizon.
+      const edge = clamp01((facing - h) / MARKER_VISIBLE_MARGIN);
       const fade = edge * edge * (3 - 2 * edge); // smoothstep
-      const appear = reduced
-        ? 1
-        : clamp01((this.introT * INTRO_SECONDS - 0.45 - m.index * 0.12) / 0.45);
+      const appear = reduced ? 1 : markerAppear(this.elapsed, m.index, this.markers.length);
       const pop = reduced ? 1 : Math.max(0.0001, easeOutBack(appear));
       const want =
         m.id === this.selectedId
@@ -1105,7 +1116,7 @@ export class GlobeScene {
       return;
     }
     // Own vector: isFacing() reuses tmpV as scratch space.
-    const facing = this.isFacing(m, 0.05);
+    const facing = this.isFacing(m, this.horizon.value + MARKER_VISIBLE_MARGIN);
     m.group.getWorldPosition(this.labelPos).project(this.camera);
     const host = this.opts.host;
     const x = (this.labelPos.x * 0.5 + 0.5) * host.clientWidth;

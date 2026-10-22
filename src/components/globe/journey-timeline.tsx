@@ -1,4 +1,4 @@
-import { formatMoney } from "@/lib/format";
+import { DISPLAY_LOCALE, formatMoney } from "@/lib/format";
 import type { JourneyDetailDto } from "@/modules/journeys/journey.mappers";
 
 type Day = JourneyDetailDto["days"][number];
@@ -26,7 +26,8 @@ export function JourneyTimeline({ days }: { days: Day[] }) {
             </h3>
             {day.date ? (
               <span className="text-muted text-xs">
-                {new Date(day.date).toLocaleDateString(undefined, {
+                {new Date(day.date).toLocaleDateString(DISPLAY_LOCALE, {
+                  timeZone: "UTC",
                   weekday: "short",
                   day: "numeric",
                   month: "short",

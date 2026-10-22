@@ -45,17 +45,45 @@ function writeCookie(pref: ThemePreference): void {
   }
 }
 
-export function getStoredPreference(): ThemePreference {
+/** Fired on `window` whenever the preference changes in this tab (detail: the
+ *  new preference), so every theme control on the page stays in step. */
+export const THEME_CHANGE_EVENT = "gl:theme-change";
+
+/** This device's own explicit choice, or null if it has never chosen. */
+export function readStoredPreference(): ThemePreference | null {
   const fromCookie = cookiePreference();
   if (fromCookie) return fromCookie;
-  if (typeof window === "undefined") return DEFAULT_THEME_PREFERENCE;
+  if (typeof window === "undefined") return null;
   try {
     const value = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (isPref(value)) return value;
   } catch {
     // storage unavailable (private mode, blocked) — fall through
   }
-  return DEFAULT_THEME_PREFERENCE;
+  return null;
+}
+
+export function getStoredPreference(): ThemePreference {
+  return readStoredPreference() ?? DEFAULT_THEME_PREFERENCE;
+}
+
+/**
+ * Cross-device sync rule: the account's saved theme only fills in for a device
+ * that has never chosen. A choice made on this device always wins — otherwise a
+ * stale server value (e.g. from a prefetched page) would undo a fresh change.
+ */
+export function themeToAdopt(
+  local: ThemePreference | null,
+  server: ThemePreference | null,
+): ThemePreference | null {
+  return !local && server ? server : null;
+}
+
+/** Re-apply whatever this device has stored (or the default). */
+export function applyStoredTheme(): ResolvedTheme {
+  const resolved = resolvePreference(getStoredPreference());
+  applyResolvedTheme(resolved);
+  return resolved;
 }
 
 function systemTheme(): ResolvedTheme {
@@ -86,5 +114,6 @@ export function setThemePreference(pref: ThemePreference): ResolvedTheme {
   writeCookie(pref);
   const resolved = resolvePreference(pref);
   applyResolvedTheme(resolved);
+  window.dispatchEvent(new CustomEvent<ThemePreference>(THEME_CHANGE_EVENT, { detail: pref }));
   return resolved;
 }

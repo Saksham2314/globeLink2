@@ -2,18 +2,22 @@
 
 import { useEffect } from "react";
 
-import { getStoredPreference, setThemePreference, type ThemePreference } from "@/lib/theme";
+import {
+  readStoredPreference,
+  setThemePreference,
+  themeToAdopt,
+  type ThemePreference,
+} from "@/lib/theme";
 
 /**
- * Reconciles this device with the signed-in user's saved theme. On a device
- * the user hasn't set a theme on (no cookie / localStorage), the server value
- * wins, so the choice follows them across devices. When the local value already
- * matches, this is a no-op and nothing flashes.
+ * Reconciles this device with the signed-in user's saved theme. Only a device
+ * that has never chosen adopts the account's theme (so it follows the user to
+ * new devices); a choice made here always wins — see `themeToAdopt`.
  */
 export function ThemeSync({ serverPref }: { serverPref: ThemePreference | null }) {
   useEffect(() => {
-    if (!serverPref) return;
-    if (getStoredPreference() !== serverPref) setThemePreference(serverPref);
+    const adopt = themeToAdopt(readStoredPreference(), serverPref);
+    if (adopt) setThemePreference(adopt);
   }, [serverPref]);
 
   return null;

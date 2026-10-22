@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import { headers } from "next/headers";
 
+import { ThemeWatcher } from "@/components/globe/theme-watcher";
 import { SkipLink } from "@/components/ui/skip-link";
+import { Splash } from "@/components/ui/splash";
 import { cn } from "@/lib/utils";
 
 import "./globals.css";
@@ -52,8 +54,9 @@ export const viewport: Viewport = {
  * never a flash of the wrong theme. Reads the `gl-theme` cookie first (set for
  * signed-in users and synced across devices), then localStorage — kept in sync
  * with src/lib/theme.ts. No stored choice → dark (DEFAULT_THEME_PREFERENCE).
+ * It also marks the opening splash as seen, so it plays once per session.
  */
-const themeScript = `(function(){try{var m=document.cookie.match(/(?:^|;\\s*)gl-theme=(light|dark|system)\\b/);var p=m?m[1]:localStorage.getItem("gl-theme");var dark=p==="light"?false:p==="system"?window.matchMedia("(prefers-color-scheme: dark)").matches:true;var r=dark?"dark":"light";var e=document.documentElement;e.dataset.theme=r;e.style.colorScheme=r;}catch(e){}})();`;
+const themeScript = `(function(){try{var m=document.cookie.match(/(?:^|;\\s*)gl-theme=(light|dark|system)\\b/);var p=m?m[1]:localStorage.getItem("gl-theme");var dark=p==="light"?false:p==="system"?window.matchMedia("(prefers-color-scheme: dark)").matches:true;var r=dark?"dark":"light";var e=document.documentElement;e.dataset.theme=r;e.style.colorScheme=r;try{if(sessionStorage.getItem("gl-splash"))e.dataset.splash="seen";else sessionStorage.setItem("gl-splash","1");}catch(x){}}catch(e){}})();`;
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const nonce = (await headers()).get("x-nonce") ?? undefined;
@@ -78,6 +81,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         </noscript>
       </head>
       <body className="bg-bg text-ink min-h-dvh">
+        <Splash />
+        <ThemeWatcher />
         <SkipLink />
         {children}
       </body>

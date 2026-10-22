@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import {
-  getStoredPreference,
-  resolvePreference,
-  setThemePreference,
-  applyResolvedTheme,
   DEFAULT_THEME_PREFERENCE,
+  getStoredPreference,
+  setThemePreference,
+  THEME_CHANGE_EVENT,
   type ThemePreference,
 } from "@/lib/theme";
 import { saveThemePreferenceAction } from "@/modules/users/user.actions";
@@ -24,22 +23,16 @@ const TRANSITION_MS = 220;
 export function ThemeControl({ variant = "menu" }: { variant?: "menu" | "inline" }) {
   const [mounted, setMounted] = useState(false);
   const [pref, setPref] = useState<ThemePreference>(DEFAULT_THEME_PREFERENCE);
-  const prefRef = useRef(pref);
-  prefRef.current = pref;
 
+  // Reflect the stored choice, and follow changes made by any other control
+  // (footer, user menu, ⌘K) or another tab. OS changes for "system" are
+  // handled globally by <ThemeWatcher>.
   useEffect(() => {
     setPref(getStoredPreference());
     setMounted(true);
-  }, []);
-
-  // Keep in step with the OS while the preference is "system".
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => {
-      if (prefRef.current === "system") applyResolvedTheme(resolvePreference("system"));
-    };
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
+    const sync = () => setPref(getStoredPreference());
+    window.addEventListener(THEME_CHANGE_EVENT, sync);
+    return () => window.removeEventListener(THEME_CHANGE_EVENT, sync);
   }, []);
 
   function choose(next: ThemePreference) {
